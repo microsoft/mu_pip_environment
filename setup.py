@@ -32,12 +32,11 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="mu_environment",
-    version="0.2.1",
+    version="0.2.2",
     author="Max Knutsen",
     author_email="maknutse@microsoft.com",
-    description="Core Python code for environment and dependency management of MU projects",
+    description="Project Mu distributed dependency management, build, test, and tool environments.",
     long_description=long_description,
-    long_description_content_type="text/markdown",
     url="https://github.com/microsoft/mu_pip_environment",
     license='BSD2',
     packages=setuptools.find_packages(),
