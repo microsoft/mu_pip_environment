@@ -200,8 +200,8 @@ class UefiBuilder(object):
 
         #set target, arch toolchain
         params = "-p " + self.env.GetValue("ACTIVE_PLATFORM")
-        params += "-b " + BuildType
-        params += "-t " + self.env.GetValue("TOOL_CHAIN_TAG")
+        params += " -b " + BuildType
+        params += " -t " + self.env.GetValue("TOOL_CHAIN_TAG")
 
         #Set the arch flags.  Multiple are split by space
         rt = self.env.GetValue("TARGET_ARCH").split(" ")
