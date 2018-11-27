@@ -32,7 +32,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="mu_environment",
-    version="0.2.2",
+    version="0.2.3",
     author="Max Knutsen",
     author_email="maknutse@microsoft.com",
     description="Project Mu distributed dependency management, build, test, and tool environments.",

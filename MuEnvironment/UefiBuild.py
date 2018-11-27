@@ -226,7 +226,7 @@ class UefiBuilder(object):
         buildvars = self.env.GetAllBuildKeyValues(BuildType)
         for key,value in buildvars.items():
             params += " -D " + key + "=" + value
-        ret = self.RunCmd("build", params)
+        ret = RunCmd("build", params)
         if(ret != 0):
             return ret
 

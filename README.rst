@@ -11,6 +11,11 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ================
 
+0.2.3
+-----------------
+
+Fixing self.RunCmd reference in UefiBuild
+
 0.2.2
 -----------------
 
