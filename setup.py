@@ -42,6 +42,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
           'pyyaml',
-          'mu_python_library>=0.2.0'
+          'mu_python_library>=0.2.6'
     ]
 )

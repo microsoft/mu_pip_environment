@@ -74,7 +74,6 @@ class UefiBuilder(object):
             self.BuildConfig = BuildConfigFile
         else:
             self.BuildConfig = os.path.join(self.ws, "BuildConfig.conf")
-        self.RunCmd = RunCmd
 
     def Go(self):
         try:
