@@ -72,12 +72,22 @@ def get_first_file(folder):
 
 
 class TestRepoResolver(unittest.TestCase):
+    def setUp(self):
+        prep_workspace()
 
+    @classmethod
+    def setUpClass(cls):
+        logger = logging.getLogger('')
+        logger.addHandler(logging.NullHandler())
+        unittest.installHandler()
+    
+    @classmethod
+    def tearDownClass(cls):
+        clean_workspace()
+    
         # check to make sure that we can clone a branch correctly
     def test_clone_branch_repo(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
-
         RepoResolver.resolve(WS, branch_dependency)
         folder_path = os.path.join(WS, branch_dependency["Path"])
         details = RepoResolver.get_details(folder_path)
@@ -86,7 +96,6 @@ class TestRepoResolver(unittest.TestCase):
 
     # don't create a git repo, create the folder, add a file, try to clone in the folder, it should throw an exception
     def test_wont_delete_files(self):
-        prep_workspace()
         folder_path = os.path.join(WS, commit_dependency["Path"])
         os.makedirs(folder_path)
         file_path = os.path.join(folder_path, "test.txt")
@@ -102,7 +111,6 @@ class TestRepoResolver(unittest.TestCase):
 
     # don't create a git repo, create the folder, add a file, try to clone in the folder, will force it to happen
     def test_will_delete_files(self):
-        prep_workspace()
         folder_path = os.path.join(WS, commit_dependency["Path"])
         os.makedirs(folder_path)
         file_path = os.path.join(folder_path, "test.txt")
@@ -118,7 +126,6 @@ class TestRepoResolver(unittest.TestCase):
         self.assertEqual(details['Url'], commit_dependency['Url'])
 
     def test_wont_delete_dirty_repo(self):
-        prep_workspace()
         RepoResolver.resolve(WS, commit_dependency)
 
         folder_path = os.path.join(WS, commit_dependency["Path"])
@@ -134,7 +141,6 @@ class TestRepoResolver(unittest.TestCase):
             RepoResolver.resolve(WS, commit_dependency, update_ok=True)
 
     def test_will_delete_dirty_repo(self):
-        prep_workspace()
         RepoResolver.resolve(WS, commit_dependency)
         folder_path = os.path.join(WS, commit_dependency["Path"])
         file_path = get_first_file(folder_path)
@@ -154,7 +160,6 @@ class TestRepoResolver(unittest.TestCase):
 
     def test_clone_commit_repo(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
         RepoResolver.resolve(WS, commit_dependency)
         folder_path = os.path.join(WS, commit_dependency["Path"])
         details = RepoResolver.get_details(folder_path)
@@ -165,7 +170,6 @@ class TestRepoResolver(unittest.TestCase):
     # check to make sure we can clone a commit correctly
     def test_fail_update(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
         RepoResolver.resolve(WS, commit_dependency)
         folder_path = os.path.join(WS, commit_dependency["Path"])
         details = RepoResolver.get_details(folder_path)
@@ -182,7 +186,6 @@ class TestRepoResolver(unittest.TestCase):
 
     def test_does_update(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
         RepoResolver.resolve(WS, commit_dependency)
         folder_path = os.path.join(WS, commit_dependency["Path"])
         details = RepoResolver.get_details(folder_path)
@@ -201,7 +204,6 @@ class TestRepoResolver(unittest.TestCase):
 
     def test_cant_switch_urls(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
         RepoResolver.resolve(WS, branch_dependency)
         folder_path = os.path.join(WS, branch_dependency["Path"])
 
@@ -217,7 +219,6 @@ class TestRepoResolver(unittest.TestCase):
 
     def test_ignore(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
         RepoResolver.resolve(WS, branch_dependency)
         folder_path = os.path.join(WS, branch_dependency["Path"])
 
@@ -233,7 +234,6 @@ class TestRepoResolver(unittest.TestCase):
 
     def test_will_switch_urls(self):
         # create an empty directory- and set that as the workspace
-        prep_workspace()
         RepoResolver.resolve(WS, branch_dependency)
 
         folder_path = os.path.join(WS, branch_dependency["Path"])
@@ -250,13 +250,5 @@ class TestRepoResolver(unittest.TestCase):
         details = RepoResolver.get_details(folder_path)
         self.assertEqual(details['Url'], microsoft_branch_dependency['Url'])
 
-
 if __name__ == '__main__':
-    # Remove the default handlers
-    logger = logging.getLogger('')
-    logger.addHandler(logging.NullHandler())
-    # logger.setLevel(5)
-
-    unittest.main(exit=False, failfast=True)
-    clean_workspace()
-    print("Finished.")
+    unittest.main()
