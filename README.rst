@@ -11,6 +11,11 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ================
 
+0.2.4
+-----------------
+
+Fixing repo resolver cloning logic
+
 0.2.3
 -----------------
 
