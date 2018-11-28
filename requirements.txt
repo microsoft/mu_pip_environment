@@ -1,0 +1,6 @@
+setuptools
+wheel
+twine
+pytest
+pytest-html
+pytest-cov

@@ -1,16 +1,16 @@
 # Project Mu Pip Environment
 
 ??? info "Git Details"
-    Repository Url: {{mu_pip_environment.url}}  
-    Branch:         {{mu_pip_environment.branch}}  
-    Commit:         [{{mu_pip_environment.commit}}]({{mu_pip_environment.commitlink}})  
+    Repository Url: {{mu_pip_environment.url}}
+    Branch:         {{mu_pip_environment.branch}}
+    Commit:         [{{mu_pip_environment.commit}}]({{mu_pip_environment.commitlink}})
     Commit Date:    {{mu_pip_environment.date}}
 
 Entry point into Self Describing Environment (SDE). Sets up and parses state of workspace before calling into build.
 
 ## More Info
 
-Please see the Project Mu docs (https://github.com/Microsoft/mu) for more information.  
+Please see the Project Mu docs (https://github.com/Microsoft/mu) for more information.
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 
@@ -26,9 +26,32 @@ Please follow the general Project Mu Pull Request process.  [More Details](https
 
 ## Installing
 
-Install from pip with `pip install mu_environment`
+Install from pip
+```cmd 
+pip install mu_environment
+```
 
-Install from source with `pip install -e .`
+or Install from local source
+```cmd
+pip install -e .
+```
+
+## Testing
+
+1. Install all dependencies
+
+``` cmd
+pip install --upgrade -r requirements.txt
+```
+
+2. Run pytest with coverage data collected
+``` cmd
+pytest -v --junitxml=test.junit.xml --html=pytest_MuEnvironment_report.html --self-contained-html --cov=MuEnvironment --cov-report html:cov_html --cov-report xml:cov.xml --cov-config .coveragerc
+```
+
+3. Look at the reports
+  * pytest_MuEnvironment_report.html
+  * cov_html/index.html
 
 ## Copyright & License
 

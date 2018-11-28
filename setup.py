@@ -43,5 +43,11 @@ setuptools.setup(
     install_requires=[
           'pyyaml',
           'mu_python_library>=0.2.6'
-    ]
+    ],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Development Status :: 3 - Alpha"
+    ],
 )
