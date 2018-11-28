@@ -41,9 +41,10 @@ def resolve(file_system_path, dependency, force=False,ignore=False, update_ok=Fa
     git_path = os.path.abspath(file_system_path)
 
     #check if we have a path in our dependency
-    if "Path" in dependency and os.path.basename(git_path) != dependency["Path"]:
+    if "Path" in dependency and not git_path.endswith(os.path.relpath(dependency["Path"])):
         # if we don't already the the path from the dependency at the end of the path we've been giving
         git_path = os.path.join(git_path, dependency["Path"])
+        
     ##
     ## NOTE - this process is defined in the Readme.md including flow chart for this behavior
     ##
