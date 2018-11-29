@@ -1,4 +1,4 @@
-## @file PluginManager.py
+# @file PluginManager.py
 # This module contains code that supports Project Mu Build Plugins
 #
 ##
@@ -29,14 +29,16 @@ import os
 import imp
 import logging
 
+
 class PluginDescriptor(object):
     def __init__(self, t):
         self.descriptor = t
         self.Obj = None
         self.Name = t["name"]
-    
+
     def __str__(self):
         return "PLUGIN DESCRIPTOR:{0}".format(self.Name)
+
 
 class PluginManager(object):
 
@@ -55,7 +57,7 @@ class PluginManager(object):
             else:
                 failed.append(a)
         return failed
-    
+
     #
     # Return List of all plugins of a given class
     #
@@ -78,34 +80,36 @@ class PluginManager(object):
     def _load(self, PluginDescriptor):
         PluginDescriptor.Obj = None
         PythonFileName = PluginDescriptor.descriptor["module"] + ".py"
-        PyModulePath = os.path.join(os.path.dirname(os.path.abspath(PluginDescriptor.descriptor["descriptor_file"])), PythonFileName)
+        PyModulePath = os.path.join(os.path.dirname(os.path.abspath(
+            PluginDescriptor.descriptor["descriptor_file"])), PythonFileName)
         PluginDescriptor.descriptor["module_file"] = PyModulePath
         logging.debug("Loading Plugin from %s", PyModulePath)
         try:
-            with open(PyModulePath,"r") as plugin_file:
+            with open(PyModulePath, "r") as plugin_file:
                 _module = imp.load_module(
                     "UefiBuild_Plugin_" + PluginDescriptor.descriptor["module"],
                     plugin_file,
                     PyModulePath,
-                    ("py","r",imp.PY_SOURCE))
+                    ("py", "r", imp.PY_SOURCE))
 
         except Exception:
             exc_info = sys.exc_info()
-            logging.error("Failed to import plugin: %s", PyModulePath, exc_info=exc_info)
+            logging.error("Failed to import plugin: %s",
+                          PyModulePath, exc_info=exc_info)
             return -1
 
         # Instantiate the plugin
-        try: 
+        try:
             obj = getattr(_module, PluginDescriptor.descriptor["module"])
             PluginDescriptor.Obj = obj()
         except AttributeError:
             exc_info = sys.exc_info()
-            logging.error("Failed to instantiate plugin: %s", PyModulePath, exc_info=exc_info)
+            logging.error("Failed to instantiate plugin: %s",
+                          PyModulePath, exc_info=exc_info)
             return -1
 
-        return 0 
-                
-    
+        return 0
+
 
 ###############################################################################
 ##                           PLUGIN Base Classes                             ##
@@ -121,7 +125,7 @@ class IUefiBuildPlugin(object):
     #
     # @param thebuilder - UefiBuild object to get env information
     #
-    # @return 0 for success NonZero for error. 
+    # @return 0 for success NonZero for error.
     ##
     def do_post_build(self, thebuilder):
         return 0
@@ -131,7 +135,7 @@ class IUefiBuildPlugin(object):
     #
     # @param thebuilder - UefiBuild object to get env information
     #
-    # @return 0 for success NonZero for error. 
+    # @return 0 for success NonZero for error.
     ##
     def do_pre_build(self, thebuilder):
         '''
@@ -141,15 +145,17 @@ class IUefiBuildPlugin(object):
 ###
 # Plugin that supports Pre and Post Build steps
 ###
+
+
 class IDscProcessorPlugin(object):
 
     ##
-    # does the transform on the DSC 
+    # does the transform on the DSC
     #
     # @param dsc - the in-memory model of the DSC
     # @param thebuilder - UefiBuild object to get env information
     #
-    # @return 0 for success NonZero for error. 
+    # @return 0 for success NonZero for error.
     ##
     def do_transform(self, dsc, thebuilder):
         return 0
@@ -162,20 +168,22 @@ class IDscProcessorPlugin(object):
     # @return 0 for the most generic level
     ##
     def get_level(self, thebuilder):
-        
+
         return 0
 
 ###
 # Plugin that supports adding Extension or helper methods
 # to the build environment
 ###
+
+
 class IUefiHelperPlugin(object):
-    
+
     ##
     # Function that allows plugin to register its functions with the
-    # obj.  
-    # @param obj[in, out]: HelperFunctions object that allows functional 
-    # registration.  
+    # obj.
+    # @param obj[in, out]: HelperFunctions object that allows functional
+    # registration.
     #
     def RegisterHelpers(self, obj):
         pass
@@ -184,18 +192,20 @@ class IUefiHelperPlugin(object):
 # Plugin that supports adding Extension or helper methods
 # to the build environment
 ###
+
+
 class IMuBuildPlugin(object):
-    
+
     ##
     # External function of plugin.  This function is used to perform the task of the MuBuild Plugin
-    # 
-    #   - package is the edk2 path to package.  This means workspace/packagepath relative.  
-    #   - absolute path to workspace 
+    #
+    #   - package is the edk2 path to package.  This means workspace/packagepath relative.
+    #   - absolute path to workspace
     #   - packagespath csv
     #   - any additional command line args
     #   - RepoConfig Object (dict) for the build
     #   - PkgConfig Object (dict)
-    #   - EnvConfig Object 
+    #   - EnvConfig Object
     #   - Plugin Manager Instance
     #   - Plugin Helper Obj Instance
     #   - Junit Logger
@@ -219,8 +229,8 @@ class IMuBuildPlugin(object):
     # Validates a configurations package .mu.json
     ##
 
-    def ValidateConfig(self,config,name=""):
-        #rather than doing the validation in the plugin - perhaps the plugin can return their required list and their optional list
+    def ValidateConfig(self, config, name=""):
+        # rather than doing the validation in the plugin - perhaps the plugin can return their required list and their optional list
         # raise an exception if error is found
         pass
 
@@ -250,10 +260,9 @@ class IMuBuildPlugin(object):
             for item in ignorelist:
                 ignorelist_lower.append(item.lower())
 
-
         extensionlist_lower = list()
         for item in extensionlist:
-                extensionlist_lower.append(item.lower())
+            extensionlist_lower.append(item.lower())
 
         returnlist = list()
         for Root, Dirs, Files in os.walk(directory):
@@ -271,7 +280,7 @@ class IMuBuildPlugin(object):
                             returnlist.append(os.path.join(Root, File))
 
         return returnlist
-    
+
     # Gets the DSC for a particular folder
     def get_dsc_name_in_dir(self, folderpath):
         try:
@@ -282,12 +291,13 @@ class IMuBuildPlugin(object):
             for entry in allEntries:
                 if entry.endswith(".dsc"):
                     dscFile = entry
-                if entry.endswith(".mu.dsc.yaml") :
+                if entry.endswith(".mu.dsc.yaml"):
                     jsonFile = entry
 
             if jsonFile:
                 # create the dsc file on the fly
-                logging.info("We should create a DSC from the JSON file on the fly: {0}".format(jsonFile))
+                logging.info(
+                    "We should create a DSC from the JSON file on the fly: {0}".format(jsonFile))
             if dscFile:
                 return os.path.join(directory, dscFile)
 
@@ -300,7 +310,7 @@ class IMuBuildPlugin(object):
 
 ###############################################################################
 ##                           PLUGIN HELPER SUPPORT                           ##
-## Supports IUefiHelperPlugin type
+# Supports IUefiHelperPlugin type
 ###############################################################################
 class HelperFunctions(object):
     def __init__(self):
@@ -313,7 +323,8 @@ class HelperFunctions(object):
         logging.debug("Logging all Registered Helper Functions:")
         for name, file in self.RegisteredFunctions.items():
             logging.debug("  Function %s registered from file %s", name, file)
-        logging.debug("Finished logging %d functions", len(self.RegisteredFunctions))
+        logging.debug("Finished logging %d functions",
+                      len(self.RegisteredFunctions))
 
     #
     # Plugins that want to register a helper function should call
@@ -325,7 +336,8 @@ class HelperFunctions(object):
     #
     def Register(self, name, function, filepath):
         if(name in self.RegisteredFunctions.keys()):
-            raise Exception("Function %s already registered from plugin file %s.  Can't register again from %s" % (name, self.RegisteredFunctions[name], filepath))
+            raise Exception("Function %s already registered from plugin file %s.  Can't register again from %s" % (
+                name, self.RegisteredFunctions[name], filepath))
         setattr(self, name, function)
         self.RegisteredFunctions[name] = filepath
 
@@ -335,8 +347,7 @@ class HelperFunctions(object):
         else:
             return False
 
-
-    def LoadFromPluginManager(self,pluginManager):
+    def LoadFromPluginManager(self, pluginManager):
         error = 0
         for Descriptor in pluginManager.GetPluginsOfClass(IUefiHelperPlugin):
             logging.info(Descriptor)
@@ -344,7 +355,7 @@ class HelperFunctions(object):
             try:
                 Descriptor.Obj.RegisterHelpers(self)
             except:
-                logging.warning("Unable to register {0}".format(Descriptor.Name))
+                logging.warning(
+                    "Unable to register {0}".format(Descriptor.Name))
                 error += 1
         return error
-

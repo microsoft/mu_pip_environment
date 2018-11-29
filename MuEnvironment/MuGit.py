@@ -1,5 +1,5 @@
-## @file MuGit.py
-# This module contains code that supports simple git operations.  This should 
+# @file MuGit.py
+# This module contains code that supports simple git operations.  This should
 # not be used as an extensive git lib but as what is needed for CI/CD builds
 #
 ##
@@ -28,7 +28,6 @@
 
 import os
 import logging
-import subprocess
 from MuPythonLibrary.UtilityFunctions import RunCmd
 
 try:
@@ -36,35 +35,40 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+
 class ObjectDict(object):
     def __init__(self):
         self.__values = list()
-    def __setattr__(self,key,value):
+
+    def __setattr__(self, key, value):
         if not key.startswith("_"):
             self.__values.append(key)
-        super().__setattr__(key,value)
+        super().__setattr__(key, value)
+
     def __str__(self):
         result = list()
         result.append("ObjectDict:")
         for value in self.__values:
-            result.append(value+":"+str(getattr(self,value)))
+            result.append(value + ":" + str(getattr(self, value)))
         return "\n".join(result)
-    def set(self,key,value):
-        self.__setattr__(key,value)
+
+    def set(self, key, value):
+        self.__setattr__(key, value)
+
 
 class Repo(object):
 
-    def __init__(self,path=None):
-        self._path = path #the path that the repo is pointed at
-        self.active_branch = None #the active branch or none if detached
-        self.bare = True #if the repo is bare
-        self.exists = False # if the .git folder exists
+    def __init__(self, path=None):
+        self._path = path  # the path that the repo is pointed at
+        self.active_branch = None  # the active branch or none if detached
+        self.bare = True  # if the repo is bare
+        self.exists = False  # if the .git folder exists
         self.remotes = ObjectDict()
-        self.initalized = False # if there is a git repo at the directory
-        self.url = None # the origin remote
-        self.dirty = False # if there are changes
-        self.head = None # the head commit that this repo is at
-        self.submodules = None # List of submodule paths
+        self.initalized = False  # if there is a git repo at the directory
+        self.url = None  # the origin remote
+        self.dirty = False  # if there are changes
+        self.head = None  # the head commit that this repo is at
+        self.submodules = None  # List of submodule paths
         self._update_from_git()
 
     # Updates the .git file
@@ -90,7 +94,7 @@ class Repo(object):
         submodule_list = []
         return_buffer = StringIO()
         params = "config --file .gitmodules --name-only --get-regexp path"
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
         if (len(p1) > 0):
@@ -103,21 +107,21 @@ class Repo(object):
         return_buffer = StringIO()
         params = "remote"
         new_remotes = ObjectDict()
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
         remote_list = p1.split("\n")
         for remote in remote_list:
             url = ObjectDict()
-            url.set("url",self._get_url(remote))
-            setattr(new_remotes, remote,url)
+            url.set("url", self._get_url(remote))
+            setattr(new_remotes, remote, url)
 
         return new_remotes
 
-    def _get_url(self,remote="origin"):
+    def _get_url(self, remote="origin"):
         return_buffer = StringIO()
         params = "config --get remote.{0}.url".format(remote)
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
@@ -127,7 +131,7 @@ class Repo(object):
         return_buffer = StringIO()
         params = "status --short"
 
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
@@ -138,7 +142,7 @@ class Repo(object):
         return_buffer = StringIO()
         params = "log --branches --not --remotes --decorate --oneline"
 
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
@@ -146,13 +150,12 @@ class Repo(object):
         if len(p1) > 0:
             return True
 
-
         return False
 
     def _get_branch(self):
         return_buffer = StringIO()
         params = "rev-parse --abbrev-ref HEAD"
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
@@ -161,20 +164,20 @@ class Repo(object):
     def _get_head(self):
         return_buffer = StringIO()
         params = "rev-parse HEAD"
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
 
         head = ObjectDict()
-        head.set("commit",p1)
+        head.set("commit", p1)
 
         return head
 
     def _get_bare(self):
         return_buffer = StringIO()
         params = "rev-parse --is-bare-repository"
-        RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
@@ -184,15 +187,17 @@ class Repo(object):
             return False
 
     def _get_initalized(self):
-        return os.path.isdir(os.path.join(self._path,".git"))
+        return os.path.isdir(os.path.join(self._path, ".git"))
 
-    def submodule(self,command, *args):
-        logging.debug("Calling command on submodule {0} with {1}".format(command,args))
+    def submodule(self, command, *args):
+        logging.debug(
+            "Calling command on submodule {0} with {1}".format(command, args))
         return_buffer = StringIO()
         flags = " ".join(args)
-        params = "submodule {0} {1}".format(command,flags)
+        params = "submodule {0} {1}".format(command, flags)
 
-        ret = RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        ret = RunCmd("git", params, workingdir=self._path,
+                     outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
@@ -206,7 +211,8 @@ class Repo(object):
 
         params = "fetch"
 
-        ret = RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        ret = RunCmd("git", params, workingdir=self._path,
+                     outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
@@ -220,7 +226,8 @@ class Repo(object):
 
         params = "pull"
 
-        ret = RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        ret = RunCmd("git", params, workingdir=self._path,
+                     outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
@@ -229,13 +236,14 @@ class Repo(object):
 
         return True
 
-    def checkout(self,branch=None,commit=None):
+    def checkout(self, branch=None, commit=None):
         return_buffer = StringIO()
-        if not branch is None:
+        if branch is not None:
             params = "checkout %s" % branch
-        elif not commit is None:
+        elif commit is not None:
             params = "checkout %s" % commit
-        ret = RunCmd("git", params, workingdir=self._path,outstream=return_buffer)
+        ret = RunCmd("git", params, workingdir=self._path,
+                     outstream=return_buffer)
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
@@ -245,30 +253,16 @@ class Repo(object):
         return True
 
     @classmethod
-    def clone_from(self,url, to_path, progress=None, env=None,shallow =False, **kwargs):
-        logging.debug("Cloning {0} into {1}".format(url,to_path))
-        #make sure we get the commit if 
+    def clone_from(self, url, to_path, progress=None, env=None, shallow=False, **kwargs):
+        logging.debug("Cloning {0} into {1}".format(url, to_path))
+        # make sure we get the commit if
         # use run command from utilities
-        cmd = ""
+        cmd = "git"
         if shallow:
-            params = "clone --depth 1 --shallow-submodules --recurse-submodules %s %s " % (url, to_path)
+            params = "clone --depth 1 --shallow-submodules --recurse-submodules %s %s " % (
+                url, to_path)
         else:
             params = "clone --recurse-submodules %s %s " % (url, to_path)
-        RunCmd("git", params)
-
-        return Repo(to_path)
-
-    def clone(self,url, shallow=False):
-        logging.debug("Cloning {0} into {1}".format(url,to_path))
-        #make sure we get the commit if
-        # use run command from utilities
-        cmd = ""
-        if shallow:
-            params = "clone --depth 1 --shallow-submodules --recurse-submodules %s %s " % (url, to_path)
-        else:
-            params = "clone --recurse-submodules %s %s " % (url, to_path)
-        RunCmd("git", params)
-
-        self._update_from_git()
+        RunCmd(cmd, params)
 
         return Repo(to_path)

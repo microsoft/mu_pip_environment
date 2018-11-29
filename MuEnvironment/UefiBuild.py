@@ -1,7 +1,7 @@
-## @file UefiBuild.py
+# @file UefiBuild.py
 # This module contains code that supports the Tianocore Edk2 build system
 # This class is designed to be subclassed by a platform to allow
-# more extensive and custom behavior. 
+# more extensive and custom behavior.
 #
 # TODO: more docs
 #
@@ -29,36 +29,32 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
 
-
+import os
 import logging
-from MuEnvironment.MultipleWorkspace import *
+from MuEnvironment.MultipleWorkspace import MultipleWorkspace
 from MuEnvironment import ConfMgmt
-import subprocess
 import traceback
 import shutil
-import threading
-import time
-from datetime import datetime
-from datetime import timedelta
 from MuEnvironment import ShellEnvironment
-from MuPythonLibrary.Uefi.EdkII.Parsers.TargetTxtParser import *
-from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import *
+from MuPythonLibrary.Uefi.EdkII.Parsers.TargetTxtParser import TargetTxtParser
+from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
 from MuPythonLibrary.UtilityFunctions import RunCmd
 
 from MuEnvironment import PluginManager
+
 
 class UefiBuilder(object):
 
     ##
     #
-    # 
+    #
     # - PackagesPath - os.pathsep string containing packages path
     def __init__(self, WorkSpace, PackagesPath, PInManager, PInHelper, args, BuildConfigFile=None):
         self.env = ShellEnvironment.GetBuildVars()
         self.mws = MultipleWorkspace()
         self.mws.setWs(WorkSpace, PackagesPath)
         self.ws = WorkSpace
-        self.pp = PackagesPath  #string using os.pathsep
+        self.pp = PackagesPath  # string using os.pathsep
         self.Args = args
         self.SkipBuild = False
         self.SkipPreBuild = False
@@ -70,7 +66,7 @@ class UefiBuilder(object):
         self.UpdateConf = False
         self.Helper = PInHelper
         self.PluginManager = PInManager
-        if(BuildConfigFile != None):
+        if(BuildConfigFile is not None):
             self.BuildConfig = BuildConfigFile
         else:
             self.BuildConfig = os.path.join(self.ws, "BuildConfig.conf")
@@ -78,27 +74,27 @@ class UefiBuilder(object):
     def Go(self):
         try:
             self.ParseForHelp()
-            if(self.ShowHelpOnly == True):
+            if(self.ShowHelpOnly):
                 self.ShowHelp()
                 return 0
 
             self.Helper.DebugLogRegisteredFunctions()
-            
+
             ret = self.SetEnv()
             if(ret != 0):
                 logging.critical("SetEnv failed")
                 return ret
 
-            #clean
-            if(self.Clean == True):
+            # clean
+            if(self.Clean):
                 logging.critical("Cleaning")
                 ret = self.CleanTree()
                 if(ret != 0):
                     logging.critical("Clean failed")
                     return ret
-            
-            #prebuild
-            if(self.SkipPreBuild == True):
+
+            # prebuild
+            if(self.SkipPreBuild):
                 logging.critical("Skipping Pre Build")
             else:
                 ret = self.PreBuild()
@@ -115,14 +111,15 @@ class UefiBuilder(object):
 
             if(self.env.GetValue("GATEDBUILD") is not None) and (self.env.GetValue("GATEDBUILD").upper() == "TRUE"):
                 ShouldGatedBuildRun = self.PlatformGatedBuildShouldHappen()
-                logging.debug("Platform Gated Build Should Run returned: %s" % str(ShouldGatedBuildRun))
-                if( self.SkipBuild == False):
+                logging.debug("Platform Gated Build Should Run returned: %s" % str(
+                    ShouldGatedBuildRun))
+                if(not self.SkipBuild):
                     self.SkipBuild = not ShouldGatedBuildRun
-                if(self.SkipPostBuild == False):
+                if(not self.SkipPostBuild):
                     self.SkipPostBuild = not ShouldGatedBuildRun
 
-            #build
-            if(self.SkipBuild == True):
+            # build
+            if(self.SkipBuild):
                 logging.critical("Skipping Build")
             else:
                 ret = self.Build()
@@ -131,8 +128,8 @@ class UefiBuilder(object):
                     logging.critical("Build failed")
                     return ret
 
-            #postbuild
-            if(self.SkipPostBuild == True):
+            # postbuild
+            if(self.SkipPostBuild):
                 logging.critical("Skipping Post Build")
             else:
                 ret = self.PostBuild()
@@ -140,25 +137,24 @@ class UefiBuilder(object):
                     logging.critical("Post Build failed")
                     return ret
 
-            #flash
-            if(self.FlashImage == True):
+            # flash
+            if(self.FlashImage):
                 logging.critical("Flashing Image")
                 ret = self.FlashRomImage()
                 if(ret != 0):
                     logging.critical("Flash Image failed")
                     return ret
 
-        except:            
+        except:
             logging.critical("Build Process Exception")
             logging.debug(traceback.format_exc())
             return -1
 
         return 0
-                    
 
     def CleanTree(self, RemoveConfTemplateFilesToo=False):
         ret = 0
-        #loop thru each build target set.  
+        # loop thru each build target set.
         logging.critical("Cleaning All Output for Build")
 
         d = self.env.GetValue("BUILD_OUTPUT_BASE")
@@ -173,8 +169,8 @@ class UefiBuilder(object):
         else:
             logging.debug("Directory [%s] already clean" % d)
 
-        #delete the conf .dbcache       
-        #this needs to be removed in case build flags changed
+        # delete the conf .dbcache
+        # this needs to be removed in case build flags changed
         d = os.path.join(self.ws, "Conf", ".cache")
         if(os.path.isdir(d)):
             shutil.rmtree(d)
@@ -188,43 +184,43 @@ class UefiBuilder(object):
                     logging.debug("Removing [%s]" % d)
 
         return ret
-                
 
     #
     # Build step
     #
+
     def Build(self):
         BuildType = self.env.GetValue("TARGET")
         logging.critical("Running Build %s" % BuildType)
 
-        #set target, arch toolchain
+        # set target, arch toolchain
         params = "-p " + self.env.GetValue("ACTIVE_PLATFORM")
         params += " -b " + BuildType
         params += " -t " + self.env.GetValue("TOOL_CHAIN_TAG")
 
-        #Set the arch flags.  Multiple are split by space
+        # Set the arch flags.  Multiple are split by space
         rt = self.env.GetValue("TARGET_ARCH").split(" ")
         for t in rt:
             params += " -a " + t
 
-        #get the report options and setup the build command
+        # get the report options and setup the build command
         if(self.env.GetValue("BUILDREPORTING") == "TRUE"):
             params += " -y " + self.env.GetValue("BUILDREPORT_FILE")
             rt = self.env.GetValue("BUILDREPORT_TYPES").split(" ")
             for t in rt:
                 params += " -Y " + t
 
-        #add special processing to handle building a single module
+        # add special processing to handle building a single module
         mod = self.env.GetValue("BUILDMODULE")
-        if( mod != None and len(mod.strip()) > 0):
+        if(mod is not None and len(mod.strip()) > 0):
             params += " -m " + mod
-            logging.critical("Single Module Build: " + mod )
+            logging.critical("Single Module Build: " + mod)
             self.SkipPostBuild = True
             self.FlashImage = False
 
-        #attach the generic build vars
+        # attach the generic build vars
         buildvars = self.env.GetAllBuildKeyValues(BuildType)
-        for key,value in buildvars.items():
+        for key, value in buildvars.items():
             params += " -D " + key + "=" + value
         ret = RunCmd("build", params)
         if(ret != 0):
@@ -250,12 +246,14 @@ class UefiBuilder(object):
             rc = Descriptor.Obj.do_pre_build(self)
             if(rc != 0):
                 if(rc is None):
-                    logging.error("Plugin Failed: %s returned NoneType" % Descriptor.Name)
+                    logging.error(
+                        "Plugin Failed: %s returned NoneType" % Descriptor.Name)
                     ret = -1
                 else:
-                    logging.error("Plugin Failed: %s returned %d" % (Descriptor.Name, rc))
+                    logging.error("Plugin Failed: %s returned %d" %
+                                  (Descriptor.Name, rc))
                     ret = rc
-                break #fail on plugin error
+                break  # fail on plugin error
             else:
                 logging.debug("Plugin Success: %s" % Descriptor.Name)
         return ret
@@ -275,34 +273,35 @@ class UefiBuilder(object):
         # run all loaded UefiBuild Plugins
         #
         for Descriptor in self.PluginManager.GetPluginsOfClass(PluginManager.IUefiBuildPlugin):
-            
+
             rc = Descriptor.Obj.do_post_build(self)
             if(rc != 0):
                 if(rc is None):
-                    logging.error("Plugin Failed: %s returned NoneType" % Descriptor.Name)
+                    logging.error(
+                        "Plugin Failed: %s returned NoneType" % Descriptor.Name)
                     ret = -1
                 else:
-                    logging.error("Plugin Failed: %s returned %d" % (Descriptor.Name, rc))
+                    logging.error("Plugin Failed: %s returned %d" %
+                                  (Descriptor.Name, rc))
                     ret = rc
-                break #fail on plugin error
+                break  # fail on plugin error
             else:
                 logging.debug("Plugin Success: %s" % Descriptor.Name)
 
         return ret
-    
 
     def SetEnv(self):
         logging.critical("Setting up the Environment")
         ShellEnvironment.GetEnvironment().set_shell_var("WORKSPACE", self.ws)
         ShellEnvironment.GetBuildVars().SetValue("WORKSPACE", self.ws, "Set in SetEnv")
 
-        #1. Process command line parameters
+        # 1. Process command line parameters
         ret = self.ParseInputArgs()
         if (ret != 0):
             logging.critical("Parse Input Args Failed")
             return ret
 
-        #look for config file and parse each line
+        # look for config file and parse each line
         ret = self.ParseCustomConfigFile()
         if(ret != 0):
             logging.critical("Parse custom config file failed")
@@ -310,25 +309,27 @@ class UefiBuilder(object):
 
         if(self.pp is not None):
             ShellEnvironment.GetEnvironment().set_shell_var("PACKAGES_PATH", self.pp)
-            ShellEnvironment.GetBuildVars().SetValue("PACKAGES_PATH", self.pp, "Set in SetEnv")
+            ShellEnvironment.GetBuildVars().SetValue(
+                "PACKAGES_PATH", self.pp, "Set in SetEnv")
 
-        #process platform parameters defined in platform build file
+        # process platform parameters defined in platform build file
         ret = self.SetPlatformEnv()
         if(ret != 0):
             logging.critical("Set Platform Env failed")
             return ret
 
-        #set some basic defaults 
+        # set some basic defaults
         self.SetBasicDefaults()
 
-        #Handle all the template files for workspace/conf/ Allow override 
+        # Handle all the template files for workspace/conf/ Allow override
         TemplatesForConf = self.env.GetValue("CONF_TEMPLATE_DIR")
         if(TemplatesForConf is not None):
             TemplatesForConf = self.mws.join(self.ws, TemplatesForConf)
-            logging.debug("Platform defined override for Template Conf Files: %s", TemplatesForConf)
+            logging.debug(
+                "Platform defined override for Template Conf Files: %s", TemplatesForConf)
         e = ConfMgmt.ConfMgmt(self.UpdateConf, TemplatesForConf)
 
-        #parse target file
+        # parse target file
         ret = self.ParseTargetFile()
         if(ret != 0):
             logging.critical("ParseTargetFile failed")
@@ -339,36 +340,39 @@ class UefiBuilder(object):
             logging.critical("ParseTargetFile failed")
             return ret
 
-        #parse DSC file
+        # parse DSC file
         ret = self.ParseDscFile()
         if(ret != 0):
             logging.critical("ParseDscFile failed")
             return ret
 
-        #parse FDF file
+        # parse FDF file
         ret = self.ParseFdfFile()
         if(ret != 0):
             logging.critical("ParseFdfFile failed")
             return ret
-        
-        #set build output base envs for all builds
-        self.env.SetValue("BUILD_OUT_TEMP", os.path.join(self.ws, self.env.GetValue("OUTPUT_DIRECTORY")), "Computed in SetEnv")
-        
-        target = self.env.GetValue("TARGET")
-        self.env.SetValue("BUILD_OUTPUT_BASE", os.path.join(self.env.GetValue("BUILD_OUT_TEMP"), target + "_" + self.env.GetValue("TOOL_CHAIN_TAG")), "Computed in SetEnv")
 
-        #We have our build target now.  Give platform build one more chance for target specific settings.
+        # set build output base envs for all builds
+        self.env.SetValue("BUILD_OUT_TEMP", os.path.join(
+            self.ws, self.env.GetValue("OUTPUT_DIRECTORY")), "Computed in SetEnv")
+
+        target = self.env.GetValue("TARGET")
+        self.env.SetValue("BUILD_OUTPUT_BASE", os.path.join(self.env.GetValue(
+            "BUILD_OUT_TEMP"), target + "_" + self.env.GetValue("TOOL_CHAIN_TAG")), "Computed in SetEnv")
+
+        # We have our build target now.  Give platform build one more chance for target specific settings.
         ret = self.SetPlatformEnvAfterTarget()
         if(ret != 0):
             logging.critical("SetPlatformEnvAfterTarget failed")
             return ret
 
-        #set the build report file
-        self.env.SetValue("BUILDREPORT_FILE", os.path.join(self.env.GetValue("BUILD_OUTPUT_BASE"), "BUILD_REPORT.TXT"), True)
-        
-        #set environment variables for the build process
+        # set the build report file
+        self.env.SetValue("BUILDREPORT_FILE", os.path.join(
+            self.env.GetValue("BUILD_OUTPUT_BASE"), "BUILD_REPORT.TXT"), True)
+
+        # set environment variables for the build process
         os.environ["EFI_SOURCE"] = self.ws
-        
+
         return 0
 
     def ParseCustomConfigFile(self):
@@ -380,7 +384,7 @@ class UefiBuilder(object):
                 if(len(line) < 1):
                     continue
 
-                (key,sep,value) = line.partition('=')
+                (key, sep, value) = line.partition('=')
                 if(len(key) < 1):
                     logging.error("Key invalid in Custom Config file: " + l)
                     continue
@@ -388,22 +392,21 @@ class UefiBuilder(object):
                 if(len(value) < 1):
                     logging.error("Value invalid in Custom Config File: " + l)
                     continue
-                
-                self.env.SetValue(key.strip().upper(), value.strip(), "From MyBuildConfig.conf")
+
+                self.env.SetValue(key.strip().upper(),
+                                  value.strip(), "From MyBuildConfig.conf")
 
             f.close()
-            
+
         return 0
-    
+
     def FlashRomImage(self):
         return self.PlatformFlashImage()
-        
-        
 
-    #-----------------------------------------------------------------------
+    # -----------------------------------------------------------------------
     # Methods that will be overridden by child class
-    #-----------------------------------------------------------------------
-    
+    # -----------------------------------------------------------------------
+
     @classmethod
     def PlatformPreBuild(self):
         return 0
@@ -432,23 +435,23 @@ class UefiBuilder(object):
     def PlatformGatedBuildShouldHappen(self):
         return True
 
-    #------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     #  HELPER FUNCTIONS
-    #------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     #
 
     #
     # Parse the TargetText file and add them as env settings.
-    # set them so they can be overridden. 
+    # set them so they can be overridden.
     #
     def ParseTargetFile(self):
         if(os.path.isfile(self.mws.join(self.ws, "Conf", "target.txt"))):
-             #parse TargetTxt File
+            # parse TargetTxt File
             logging.debug("Parse Target.txt file")
             ttp = TargetTxtParser()
             ttp.ParseFile(self.mws.join(self.ws, "Conf", "target.txt"))
-            for key,value in ttp.Dict.items():
-                #set env as overrideable
+            for key, value in ttp.Dict.items():
+                # set env as overrideable
                 self.env.SetValue(key, value, "From Target.txt", True)
 
         else:
@@ -457,20 +460,23 @@ class UefiBuilder(object):
 
         return 0
 
-
     #
     # Parse the Active platform DSC file.  This will get lots of variable info to
     # be used in the build.  This makes it so we don't have to define things twice
     #
+
     def ParseDscFile(self):
-        dsc_file_path = self.mws.join(self.ws, self.env.GetValue("ACTIVE_PLATFORM"))
+        dsc_file_path = self.mws.join(
+            self.ws, self.env.GetValue("ACTIVE_PLATFORM"))
         if(os.path.isfile(dsc_file_path)):
-             #parse DSC File
-            logging.debug("Parse Active Platform DSC file: {0}".format(dsc_file_path))
-            dscp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
+            # parse DSC File
+            logging.debug(
+                "Parse Active Platform DSC file: {0}".format(dsc_file_path))
+            dscp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(
+                self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
             dscp.ParseFile(dsc_file_path)
-            for key,value in dscp.LocalVars.items():
-                #set env as overrideable
+            for key, value in dscp.LocalVars.items():
+                # set env as overrideable
                 self.env.SetValue(key, value, "From Platform DSC File", True)
 
         else:
@@ -482,17 +488,18 @@ class UefiBuilder(object):
     #
     # Parse the Active platform FDF file.  This will get lots of variable info to
     # be used in the build.  This makes it so we don't have to define things twice
-    # the FDF file usually comes from the Active Platform DSC file so it needs to 
-    # be parsed first.  
+    # the FDF file usually comes from the Active Platform DSC file so it needs to
+    # be parsed first.
     #
     def ParseFdfFile(self):
         if(self.env.GetValue("FLASH_DEFINITION") is None):
             logging.debug("No flash definition set")
             return 0
         if(os.path.isfile(self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION")))):
-            #parse the FDF file- fdf files have similar syntax to DSC and therefore parser works for both.
+            # parse the FDF file- fdf files have similar syntax to DSC and therefore parser works for both.
             logging.debug("Parse Active Flash Definition (FDF) file")
-            fdfp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
+            fdfp = DscParser().SetBaseAbsPath(self.ws).SetPackagePaths(
+                self.pp.split(os.pathsep)).SetInputVars(self.env.GetAllBuildKeyValues())
             pa = self.mws.join(self.ws, self.env.GetValue("FLASH_DEFINITION"))
             fdfp.ParseFile(pa)
             for key, value in fdfp.LocalVars.items():
@@ -546,13 +553,13 @@ class UefiBuilder(object):
                 elif(a.upper() == "-H"):
                     self.ShowHelpOnly = True
                 elif(a.upper() == "-?"):
-                    self.ShowHelpOnly = True           
-        
+                    self.ShowHelpOnly = True
+
     #
     # Parse out any arguments so they can be set into the env
     #
     def ParseInputArgs(self):
-        #skip first arg as its program name
+        # skip first arg as its program name
         for a in self.Args[1:]:
             if(a.startswith("--")):
                 if(a.upper() == "--SKIPBUILD"):
@@ -580,12 +587,12 @@ class UefiBuilder(object):
                     self.FlashImage = False
                 elif(a.upper().startswith("--BUILD_ENV_OUT_FILE")) and (a.count("=") == 1):
                     self.OutputBuildEnvBeforeBuildToFile = a.partition("=")[2]
-                    
+
             elif(a.count("=") == 1):
                 tokens = a.strip().split("=")
                 self.env.SetValue(tokens[0], tokens[1], "From CmdLine")
             else:
-                logging.critical("Unknown build parameter!!  Parameter: %s" % a)
+                logging.critical(
+                    "Unknown build parameter!!  Parameter: %s" % a)
                 return -1
         return 0
-

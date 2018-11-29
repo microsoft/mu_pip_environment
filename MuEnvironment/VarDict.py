@@ -1,8 +1,8 @@
-## @file VarDict.py
-# This module contains code for a special overridable dictionary.  
-# This stores most of the build configuration data and allows 
-# extensive config sharing for the build process, pre-build, and 
-# post-build.  
+# @file VarDict.py
+# This module contains code for a special overridable dictionary.
+# This stores most of the build configuration data and allows
+# extensive config sharing for the build process, pre-build, and
+# post-build.
 #
 ##
 # Copyright (c) 2018, Microsoft Corporation
@@ -38,7 +38,7 @@ class EnvEntry(object):
         self.Overrideable = overridable
 
     def PrintEntry(self, f=None):
-        if(f == None):
+        if(f is None):
             print("Value: %s" % self.Value, file=f)
             print("Comment: %s" % self.Comment, file=f)
             if(self.Overrideable):
@@ -47,12 +47,14 @@ class EnvEntry(object):
     #
     # Function used to override the value if option allows it
     #
-    def SetValue(self, value, comment, overridable = False):
+
+    def SetValue(self, value, comment, overridable=False):
         if (value == self.Value):
             return True
 
         if(not self.Overrideable):
-            logging.debug("Can't set value [%s] as it isn't overrideable. Previous comment %s" % (value,self.Comment))
+            logging.debug("Can't set value [%s] as it isn't overrideable. Previous comment %s" % (
+                value, self.Comment))
             return False
 
         self.Value = value
@@ -67,7 +69,7 @@ class EnvEntry(object):
 class VarDict(object):
     def __init__(self):
         self.Logger = logging.getLogger("EnvDict")
-        self.Dstore = {}     #a set of envs
+        self.Dstore = {}  # a set of envs
 
     def GetEntry(self, key):
         return self.Dstore.get(key.upper())
@@ -82,14 +84,13 @@ class VarDict(object):
             value = entry.Value
             comment = entry.Comment
             override = entry.Overrideable
-            new_copy.SetValue(key,value,comment,override)
+            new_copy.SetValue(key, value, comment, override)
         return new_copy
-
 
     def GetValue(self, k):
         key = k.upper()
         en = self.GetEntry(key)
-        if(en != None):
+        if(en is not None):
             self.Logger.debug("Key %s found.  Value %s" % (key, en.GetValue()))
             return en.GetValue()
         else:
@@ -101,51 +102,52 @@ class VarDict(object):
         en = self.GetEntry(key)
         value = str(v)
         self.Logger.debug("Trying to set key %s to value %s" % (k, v))
-        if(en == None):
-            #new entry
+        if(en is None):
+            # new entry
             en = EnvEntry(value, comment, overridable)
             self.Dstore[key] = en
             return True
-        
-        return en.SetValue(value, comment, overridable)
 
+        return en.SetValue(value, comment, overridable)
 
     #
     # function used to get a build var value for given key and buildtype
     #
-    # if BuildType is None 
+    # if BuildType is None
     # Build vars are defined by vars that start with BLD_
     #  BLD_*_<YOUR KEY HERE> means all build types
     #  BLD_DEBUG_<YOUR KEY HERE> means build of debug type
     #  BLD_RELEASE_<YOUR KEY HERE> means build of release type
     #  etc
     #
+
     def GetBuildValue(self, key, BuildType=None):
         rv = None
-        
-        if(BuildType == None):
+
+        if(BuildType is None):
             BuildType = self.GetValue("TARGET")
-        
-        if(BuildType == None):
-            logging.debug("GetBuildValue - Invalid Parameter BuildType is None and Target Not set. Key is: " + key)
+
+        if(BuildType is None):
+            logging.debug(
+                "GetBuildValue - Invalid Parameter BuildType is None and Target Not set. Key is: " + key)
             return None
 
-        if(key == None):
-            logging.debug("GetBuildValue - Invalid Parameter key is None. BuildType is: " + BuildType)
+        if(key is None):
+            logging.debug(
+                "GetBuildValue - Invalid Parameter key is None. BuildType is: " + BuildType)
             return None
 
-        
         ty = BuildType.upper().strip()
         tk = key.upper().strip()
-        # see if specific 
+        # see if specific
         k = "BLD_" + ty + "_" + tk
         rv = self.GetValue(k)
-        if(rv == None):
-            #didn't fine build type specific so check for generic
+        if(rv is None):
+            # didn't fine build type specific so check for generic
             k = "BLD_*_" + tk
             rv = self.GetValue(k)
 
-        #return value...if not found should return None
+        # return value...if not found should return None
         return rv
 
     #
@@ -158,39 +160,40 @@ class VarDict(object):
     #  etc
     #
     def GetAllBuildKeyValues(self, BuildType=None):
-        l = {}
-        if(BuildType == None):
+        returndict = {}
+        if(BuildType is None):
             BuildType = self.GetValue("TARGET")
 
-        if(BuildType == None):
-            logging.debug("GetAllBuildKeyValues - Invalid Parameter BuildType is None and Target Not Set.")
-            return l
+        if(BuildType is None):
+            logging.debug(
+                "GetAllBuildKeyValues - Invalid Parameter BuildType is None and Target Not Set.")
+            return returndict
 
         ty = BuildType.upper().strip()
         logging.debug("Getting all build keys for build type " + ty)
 
-        #get all the generic build options
-        for key,value in self.Dstore.items():
+        # get all the generic build options
+        for key, value in self.Dstore.items():
             if(key.startswith("BLD_*_")):
                 k = key[6:]
-                l[k] = value.GetValue()
-                
-        #will override with specific for this build type
-        #figure out offset part of key name to strip
+                returndict[k] = value.GetValue()
+
+        # will override with specific for this build type
+        # figure out offset part of key name to strip
         ks = len(ty) + 5
-        for key,value in self.Dstore.items():
+        for key, value in self.Dstore.items():
             if(key.startswith("BLD_" + ty + "_")):
                 k = key[ks:]
-                l[k] = value.GetValue()
+                returndict[k] = value.GetValue()
 
-        return l
+        return returndict
 
     def PrintAll(self, fp=None):
         f = None
         if(fp is not None):
             f = open(fp, 'w')
-        for key,value in self.Dstore.items():
-            print("Key = %s"% key, file=f)
+        for key, value in self.Dstore.items():
+            print("Key = %s" % key, file=f)
             value.PrintEntry(f)
         if(f):
             f.close()

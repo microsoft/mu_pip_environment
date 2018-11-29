@@ -2,8 +2,6 @@
 import logging
 import os
 import unittest
-import sys
-import time
 from MuEnvironment import RepoResolver
 import tempfile
 
@@ -46,7 +44,7 @@ test_dir = None
 
 
 def prep_workspace():
-    global test_dir     
+    global test_dir
     # if test temp dir doesn't exist
     if test_dir is None or not os.path.isdir(test_dir):
         test_dir = tempfile.mkdtemp()
@@ -84,11 +82,11 @@ class TestRepoResolver(unittest.TestCase):
         logger = logging.getLogger('')
         logger.addHandler(logging.NullHandler())
         unittest.installHandler()
-    
+
     @classmethod
     def tearDownClass(cls):
         clean_workspace()
-    
+
         # check to make sure that we can clone a branch correctly
     def test_clone_branch_repo(self):
         # create an empty directory- and set that as the workspace
@@ -103,7 +101,8 @@ class TestRepoResolver(unittest.TestCase):
         folder_path = os.path.join(test_dir, commit_dependency["Path"])
         os.makedirs(folder_path)
         file_path = os.path.join(folder_path, "test.txt")
-        file_path = os.path.join(test_dir, branch_dependency["Path"], "test.txt")
+        file_path = os.path.join(
+            test_dir, branch_dependency["Path"], "test.txt")
         out_file = open(file_path, "w+")
         out_file.write("Make sure we don't delete this")
         out_file.close()
@@ -198,7 +197,8 @@ class TestRepoResolver(unittest.TestCase):
         self.assertEqual(details['Commit'], commit_dependency['Commit'])
         # first we checkout
         try:
-            RepoResolver.resolve(test_dir, commit_later_dependency, update_ok=True)
+            RepoResolver.resolve(
+                test_dir, commit_later_dependency, update_ok=True)
         except:
             self.fail("We are not supposed to throw an exception")
         details = RepoResolver.get_details(folder_path)
@@ -231,7 +231,8 @@ class TestRepoResolver(unittest.TestCase):
         self.assertEqual(details['Url'], branch_dependency['Url'])
         # first we checkout
 
-        RepoResolver.resolve(test_dir, microsoft_branch_dependency, ignore=True)
+        RepoResolver.resolve(
+            test_dir, microsoft_branch_dependency, ignore=True)
 
         details = RepoResolver.get_details(folder_path)
         self.assertEqual(details['Url'], branch_dependency['Url'])
@@ -247,12 +248,14 @@ class TestRepoResolver(unittest.TestCase):
         self.assertEqual(details['Url'], branch_dependency['Url'])
         # first we checkout
         try:
-            RepoResolver.resolve(test_dir, microsoft_branch_dependency, force=True)
+            RepoResolver.resolve(
+                test_dir, microsoft_branch_dependency, force=True)
         except:
             self.fail("We shouldn't fail when we are forcing")
 
         details = RepoResolver.get_details(folder_path)
         self.assertEqual(details['Url'], microsoft_branch_dependency['Url'])
+
 
 if __name__ == '__main__':
     unittest.main()

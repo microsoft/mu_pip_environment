@@ -1,4 +1,4 @@
-## @file ShellEnvironment.py
+# @file ShellEnvironment.py
 # This module contains code that helps to manage the build environment
 # including PATH, PYTHONPATH, and ENV variables.
 #
@@ -35,123 +35,135 @@ from MuEnvironment import VarDict
 #       See here for more ideas...
 #       https://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
 class ShellEnvironment(object):
-  def __init__(self):
-    super(ShellEnvironment, self).__init__()
+    def __init__(self):
+        super(ShellEnvironment, self).__init__()
 
-    self.global_path = None
-    self.global_pypath = None
+        self.global_path = None
+        self.global_pypath = None
 
-    self.import_environment()
+        self.import_environment()
 
-    self.original_path = self.global_path
-    self.original_pypath = self.global_pypath
+        self.original_path = self.global_path
+        self.original_pypath = self.global_pypath
 
-  def set_path(self, path_elements):
-    logging.debug("Overriding PATH with new value.")
-    self.global_path = list(path_elements)
-    os.environ["PATH"] = os.pathsep.join(path_elements)
-    self.export_environment()
+    def set_path(self, path_elements):
+        logging.debug("Overriding PATH with new value.")
+        self.global_path = list(path_elements)
+        os.environ["PATH"] = os.pathsep.join(path_elements)
+        self.export_environment()
 
-  def set_pypath(self, path_elements):
-    logging.debug("Overriding PYTHONPATH with new value.")
-    self.global_pypath = list(path_elements)
-    self.export_environment()
+    def set_pypath(self, path_elements):
+        logging.debug("Overriding PYTHONPATH with new value.")
+        self.global_pypath = list(path_elements)
+        self.export_environment()
 
-  def append_path(self, path_element):
-    logging.debug("Appending PATH element '%s'." % path_element)
-    if path_element not in self.global_path:
-      self.global_path.append(path_element)
-      self.export_environment()
+    def append_path(self, path_element):
+        logging.debug("Appending PATH element '%s'." % path_element)
+        if path_element not in self.global_path:
+            self.global_path.append(path_element)
+            self.export_environment()
 
-  def append_pypath(self, path_element):
-    logging.debug("Appending PYTHONPATH element '%s'." % path_element)
-    if path_element not in self.global_pypath:
-      self.global_pypath.append(path_element)
-      self.export_environment()
+    def append_pypath(self, path_element):
+        logging.debug("Appending PYTHONPATH element '%s'." % path_element)
+        if path_element not in self.global_pypath:
+            self.global_pypath.append(path_element)
+            self.export_environment()
 
-  def insert_path(self, path_element):
-    logging.debug("Inserting PATH element '%s'." % path_element)
-    if path_element not in self.global_path:
-      self.global_path.insert(0, path_element)
-      self.export_environment()
+    def insert_path(self, path_element):
+        logging.debug("Inserting PATH element '%s'." % path_element)
+        if path_element not in self.global_path:
+            self.global_path.insert(0, path_element)
+            self.export_environment()
 
-  def insert_pypath(self, path_element):
-    logging.debug("Inserting PYTHONPATH element '%s'." % path_element)
-    if path_element not in self.global_path:
-      self.global_pypath.insert(0, path_element)
-      self.export_environment()
+    def insert_pypath(self, path_element):
+        logging.debug("Inserting PYTHONPATH element '%s'." % path_element)
+        if path_element not in self.global_path:
+            self.global_pypath.insert(0, path_element)
+            self.export_environment()
 
-  def get_build_var(self, var_name):
-    return GetBuildVars().GetValue(var_name)
+    def get_build_var(self, var_name):
+        return GetBuildVars().GetValue(var_name)
 
-  def set_build_var(self, var_name, var_data):
-    logging.debug("Updating BUILD VAR element '%s': '%s'." % (var_name, var_data))
-    GetBuildVars().SetValue(var_name, var_data, '', overridable=True)
+    def set_build_var(self, var_name, var_data):
+        logging.debug(
+            "Updating BUILD VAR element '%s': '%s'." % (var_name, var_data))
+        GetBuildVars().SetValue(var_name, var_data, '', overridable=True)
 
-  def get_shell_var(self, var_name):
-    return os.environ.get(var_name, None)
+    def get_shell_var(self, var_name):
+        return os.environ.get(var_name, None)
 
-  def set_shell_var(self, var_name, var_data):
-    logging.debug("Updating SHELL VAR element '%s': '%s'." % (var_name, var_data))
-    os.environ[var_name] = var_data
+    def set_shell_var(self, var_name, var_data):
+        logging.debug(
+            "Updating SHELL VAR element '%s': '%s'." % (var_name, var_data))
+        os.environ[var_name] = var_data
 
-  def import_environment(self):
-    # Record the PATH elements of the current environment.
-    path = os.environ.get('PATH', "")
-    # Filter removes empty elements.
-    # List creates an actual list rather than a generator.
-    self.global_path = list(filter(None, path.split(os.pathsep)))  # Filter removes empty strings.
+    def import_environment(self):
+        # Record the PATH elements of the current environment.
+        path = os.environ.get('PATH', "")
+        # Filter removes empty elements.
+        # List creates an actual list rather than a generator.
+        # Filter removes empty strings.
+        self.global_path = list(filter(None, path.split(os.pathsep)))
 
-    # Record the PYTHONPATH elements of the current environment.
-    # When reading PYTHONPATH, try reading the live path from sys.
-    self.global_pypath = sys.path
+        # Record the PYTHONPATH elements of the current environment.
+        # When reading PYTHONPATH, try reading the live path from sys.
+        self.global_pypath = sys.path
 
-  def export_environment(self):
-    os.environ["PATH"] = os.pathsep.join(self.global_path)
-    os.environ["PYTHONPATH"] = os.pathsep.join(self.global_pypath)
-    sys.path = self.global_pypath
+    def export_environment(self):
+        os.environ["PATH"] = os.pathsep.join(self.global_path)
+        os.environ["PYTHONPATH"] = os.pathsep.join(self.global_pypath)
+        sys.path = self.global_pypath
 
-  def log_environment(self):
-    logging.debug("FINAL PATH:")
-    logging.debug(", ".join(self.global_path))
+    def log_environment(self):
+        logging.debug("FINAL PATH:")
+        logging.debug(", ".join(self.global_path))
 
-    logging.debug("FINAL PYTHONPATH:")
-    logging.debug(", ".join(self.global_pypath))
+        logging.debug("FINAL PYTHONPATH:")
+        logging.debug(", ".join(self.global_pypath))
 
 
 rootEnvironment = None
+
+
 def GetEnvironment():
-  global rootEnvironment
+    global rootEnvironment
 
-  if not rootEnvironment:
-    rootEnvironment = ShellEnvironment()
-  return rootEnvironment
+    if not rootEnvironment:
+        rootEnvironment = ShellEnvironment()
+    return rootEnvironment
 
-  if len(rootVarDict) == 0:
-    rootVarDict.append(VarDict.VarDict())
-  return rootVarDict[0]
+    if len(rootVarDict) == 0:
+        rootVarDict.append(VarDict.VarDict())
+    return rootVarDict[0]
 
 
 rootVarDict = list()
-def GetBuildVars():
-  global rootVarDict
 
-  if len(rootVarDict) == 0:
-    rootVarDict.append(VarDict.VarDict())
-  return rootVarDict[-1]
+
+def GetBuildVars():
+    global rootVarDict
+
+    if len(rootVarDict) == 0:
+        rootVarDict.append(VarDict.VarDict())
+    return rootVarDict[-1]
+
 
 def CheckpointBuildVars():
-  global rootVarDict
-  import copy
-  newBuildVars = copy.copy(GetBuildVars())
-  rootVarDict.append(newBuildVars)
-  logging.debug("Created checkpoint {0} for build vars".format(len(rootVarDict)))
+    global rootVarDict
+    import copy
+    newBuildVars = copy.copy(GetBuildVars())
+    rootVarDict.append(newBuildVars)
+    logging.debug(
+        "Created checkpoint {0} for build vars".format(len(rootVarDict)))
+
 
 def RevertBuildVars():
-  global rootVarDict
-  rootVarDict.pop()
-  logging.debug("Reverting to checkpoint {0} for build vars".format(len(rootVarDict)))
+    global rootVarDict
+    rootVarDict.pop()
+    logging.debug(
+        "Reverting to checkpoint {0} for build vars".format(len(rootVarDict)))
+
 
 def ClearEnvironment():
-  global rootEnvironment
-  rootEnvironment = None
+    global rootEnvironment
+    rootEnvironment = None

@@ -13,14 +13,18 @@ steps:
 - script: python -m pip install --upgrade pip
   displayName: 'Install/Upgrade pip'
 
+- script: pip uninstall -y mu_environment
+  displayName: 'Remove existing version of self'
+
 - script: pip install --upgrade -r requirements.txt
   displayName: 'Install requirements'
 
 - script: pip install -e .
-  displayName: 'Install MuEnvironment from Source'
+  displayName: 'Install from Source'
 
 - script: pytest -v --junitxml=test.junit.xml --html=pytest_MuEnvironment_report.html --self-contained-html --cov=MuEnvironment --cov-report html:cov_html --cov-report xml:cov.xml --cov-config .coveragerc
   displayName: 'Run UnitTests'
+  continueOnError: true
 
 # Publish Test Results to Azure Pipelines/TFS
 - task: PublishTestResults@2
@@ -39,6 +43,8 @@ steps:
   inputs:
     pathtoPublish: 'pytest_MuEnvironment_report.html' 
     artifactName: 'MuEnvironment unit test report' 
+  continueOnError: true
+  condition: succeededOrFailed()
 
 # Publish Code Coverage Results
 # Publish Cobertura code coverage results
@@ -47,8 +53,18 @@ steps:
     codeCoverageTool: 'cobertura' # Options: cobertura, jaCoCo
     summaryFileLocation: $(System.DefaultWorkingDirectory)/cov.xml
     reportDirectory: $(System.DefaultWorkingDirectory)/cov_html
+  condition: succeededOrFailed()
 
+- script: flake8 . > flake8.err.log
+  displayName: 'Run flake8'
+  condition: succeededOrFailed()
 
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: 'flake8.err.log' 
+    artifactName: 'Flake8 Error log file'
+  continueOnError: true
+  condition: Failed() 
 
 
 #- script: python setup.py sdist bdist_wheel

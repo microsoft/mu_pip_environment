@@ -23,35 +23,19 @@ Please open any issues in the Project Mu GitHub tracker. [More Details](https://
 ## Contributing Code or Docs
 
 Please follow the general Project Mu Pull Request process.  [More Details](https://microsoft.github.io/mu/How/contributing/)
+Additionally make sure all testing described in the "Development" section passes.  
 
-## Installing
+## Using
 
-Install from pip
-```cmd 
-pip install mu_environment
-```
+[Usage Details](using.md)
 
-or Install from local source
-```cmd
-pip install -e .
-```
+## Development
 
-## Testing
+[Development Details](developing.md)
 
-1. Install all dependencies
+## Publish
 
-``` cmd
-pip install --upgrade -r requirements.txt
-```
-
-2. Run pytest with coverage data collected
-``` cmd
-pytest -v --junitxml=test.junit.xml --html=pytest_MuEnvironment_report.html --self-contained-html --cov=MuEnvironment --cov-report html:cov_html --cov-report xml:cov.xml --cov-config .coveragerc
-```
-
-3. Look at the reports
-  * pytest_MuEnvironment_report.html
-  * cov_html/index.html
+[Publish Details](publishing.md)
 
 ## Copyright & License
 

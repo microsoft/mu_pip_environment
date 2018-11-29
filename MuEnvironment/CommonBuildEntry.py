@@ -1,4 +1,4 @@
-## @file CommonBuildEntry.py
+# @file CommonBuildEntry.py
 # This module contains code that is shared between all the entry points for PlatformBUild
 # scripts.
 #
@@ -39,9 +39,11 @@ import pkg_resources
 # https://stackoverflow.com/questions/1714027/version-number-comparison
 # With Python 3.0 help from:
 # https://docs.python.org/3.0/whatsnew/3.0.html#ordering-comparisons
+
+
 def version_compare(version1, version2):
     def normalize(v):
-        return [int(x) for x in re.sub(r'(\.0+)*$','', v).split(".")]
+        return [int(x) for x in re.sub(r'(\.0+)*$', '', v).split(".")]
     (a, b) = (normalize(version1), normalize(version2))
     return (a > b) - (a < b)
 
@@ -53,14 +55,15 @@ def version_compare(version1, version2):
 # Also abstracts the bytes-vs-strings ambiguity in Python 2, 3.
 # Will raise an error if return code is non-zero.
 def cmd_with_output(cmd_string, cwd):
-    c = subprocess.Popen(cmd_string, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd, shell=True)
+    c = subprocess.Popen(cmd_string, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, cwd=cwd, shell=True)
     c.wait()
 
     # Get the data.
     cmd_result = c.stdout.read()
     # PYTHON COMPAT HACK BEGIN
     if type(cmd_result) is bytes:
-      cmd_result = cmd_result.decode()
+        cmd_result = cmd_result.decode()
     # PYTHON COMPAT HACK END
 
     # Check for errors.
@@ -81,9 +84,11 @@ def minimum_env_init(my_workspace_path, my_project_scope):
     soft_min_py = "3.7"
     hard_min_py = "3.6"
     if version_compare(hard_min_py, cur_py) > 0:
-        raise RuntimeError("Please upgrade Python! Current version is %s. Minimum is %s." % (cur_py, hard_min_py))
+        raise RuntimeError(
+            "Please upgrade Python! Current version is %s. Minimum is %s." % (cur_py, hard_min_py))
     if version_compare(soft_min_py, cur_py) > 0:
-        logging.critical("Please upgrade Python! Current version is %s. Recommended minimum is %s." % (cur_py, soft_min_py))
+        logging.critical("Please upgrade Python! Current version is %s. Recommended minimum is %s." % (
+            cur_py, soft_min_py))
 
     # Initialized the build environment.
     return SelfDescribingEnvironment.BootstrapEnvironment(my_workspace_path, my_project_scope)
@@ -119,17 +124,21 @@ def configure_base_logging(mode="standard"):
 # setup_process() automates all of the processes that should be unique
 # to each platform build. It will attempt to set up the repos and
 # anything else that's important.
+
+
 def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_it=False):
     # Grab the remaining Git repos.
     if my_required_repos:
-        #### Git Repos: STEP 1 --------------------------------------
+        # Git Repos: STEP 1 --------------------------------------
         # Make sure that the repos are all synced.
-        print("## Syncing Git repositories: %s..." % ", ".join(my_required_repos))
+        print("## Syncing Git repositories: %s..." %
+              ", ".join(my_required_repos))
         cmd_parts = ("git", "submodule", "sync")
         cmd_parts += my_required_repos
         cmd_string = " ".join(cmd_parts)
         try:
-            c = subprocess.Popen(cmd_string, stderr=subprocess.STDOUT, cwd=my_workspace_path, shell=True)
+            c = subprocess.Popen(
+                cmd_string, stderr=subprocess.STDOUT, cwd=my_workspace_path, shell=True)
             c.wait()
             if c.returncode != 0:
                 raise RuntimeError(c.stdout.read())
@@ -139,12 +148,12 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
             raise
         print("Done.\n")
 
-        #### Git Repos: STEP 2 --------------------------------------
+        # Git Repos: STEP 2 --------------------------------------
         # Iterate through all repos and see whether they should be fetched.
         for required_repo in my_required_repos:
             print("## Checking Git repository: %s..." % required_repo)
 
-            #### Git Repos: STEP 2a ---------------------------------
+            # Git Repos: STEP 2a ---------------------------------
             # Need to determine whether to skip this repo.
             repo_path = os.path.join(my_workspace_path, required_repo)
             skip_repo = False
@@ -164,18 +173,21 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
                 # If anything was returned, we should skip processing the repo.
                 # It is either on a different commit or it has local changes.
                 if git_data:
-                    print("-- NOTE: Repo currently exists and appears to have local changes!")
+                    print(
+                        "-- NOTE: Repo currently exists and appears to have local changes!")
                     print("-- Skipping fetch!")
                     skip_repo = True
 
-            #### Git Repos: STEP 2b ---------------------------------
+            # Git Repos: STEP 2b ---------------------------------
             # If we're not skipping, grab it.
             if not skip_repo or force_it:
                 print("## Fetching repo.")
-                cmd_parts = ("git", "submodule", "update", "--init", "--recursive", "--progress", required_repo)
+                cmd_parts = ("git", "submodule", "update", "--init",
+                             "--recursive", "--progress", required_repo)
                 cmd_string = " ".join(cmd_parts)
                 try:
-                    c = subprocess.Popen(cmd_string, stderr=subprocess.STDOUT, cwd=my_workspace_path, shell=True)
+                    c = subprocess.Popen(
+                        cmd_string, stderr=subprocess.STDOUT, cwd=my_workspace_path, shell=True)
                     c.wait()
                     if c.returncode != 0:
                         raise RuntimeError(c.stdout.read())
@@ -189,8 +201,10 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
     # we're ready to build the environment and fetch the
     # dependencies for this project.
     print("## Fetching all external dependencies...")
-    (build_env, shell_env) = minimum_env_init(my_workspace_path, my_project_scope)
-    SelfDescribingEnvironment.UpdateDependencies(my_workspace_path, my_project_scope)
+    (build_env, shell_env) = minimum_env_init(
+        my_workspace_path, my_project_scope)
+    SelfDescribingEnvironment.UpdateDependencies(
+        my_workspace_path, my_project_scope)
     print("Done.\n")
 
     # TODO: Install any certs any other things that might be required.
@@ -199,12 +213,14 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
 def update_process(my_workspace_path, my_project_scope):
     # Get the environment set up.
     logging.info("## Parsing environment...")
-    (build_env, shell_env) = minimum_env_init(my_workspace_path, my_project_scope)
+    (build_env, shell_env) = minimum_env_init(
+        my_workspace_path, my_project_scope)
     logging.info("Done.\n")
 
     # Update the environment.
     logging.info("## Updating environment...")
-    SelfDescribingEnvironment.UpdateDependencies(my_workspace_path, my_project_scope)
+    SelfDescribingEnvironment.UpdateDependencies(
+        my_workspace_path, my_project_scope)
     logging.info("Done.\n")
 
 
@@ -221,7 +237,7 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     filelogger.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
     logging.getLogger('').addHandler(filelogger)
 
-    logging.info("Log Started: " + datetime.strftime(datetime.now(), "%A, %B %d, %Y %I:%M%p" ))
+    logging.info("Log Started: " + datetime.strftime(datetime.now(), "%A, %B %d, %Y %I:%M%p"))
     logging.info("Running Python version: " + str(sys.version_info))
     logging.info("Running mu_python_library version: " + pkg_resources.get_distribution("mu_python_library").version)
     logging.info("Running mu_environment version: " + pkg_resources.get_distribution("mu_environment").version)
@@ -230,15 +246,18 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     # Next, get the environment set up.
     #
     try:
-        (build_env, shell_env) = minimum_env_init(my_workspace_path, my_project_scope)
+        (build_env, shell_env) = minimum_env_init(
+            my_workspace_path, my_project_scope)
         if not SelfDescribingEnvironment.VerifyEnvironment(my_workspace_path, my_project_scope):
             raise RuntimeError("Validation failed.")
     except:
-        raise RuntimeError("Environment is not in a state to build! Please run '--UPDATE'.")
+        raise RuntimeError(
+            "Environment is not in a state to build! Please run '--UPDATE'.")
 
-    #Load plugins
+    # Load plugins
     pluginManager = PluginManager.PluginManager()
-    failedPlugins = pluginManager.SetListOfEnvironmentDescriptors(build_env.plugins)
+    failedPlugins = pluginManager.SetListOfEnvironmentDescriptors(
+        build_env.plugins)
     if failedPlugins:
         logging.critical("One or more plugins failed to load. Halting build.")
         for a in failedPlugins:
@@ -246,9 +265,8 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
         raise Exception("One or more plugins failed to load.")
 
     helper = PluginManager.HelperFunctions()
-    if( helper.LoadFromPluginManager(pluginManager) > 0):
+    if(helper.LoadFromPluginManager(pluginManager) > 0):
         raise Exception("One or more helper plugins failed to load.")
-
 
     # NOTE: This implicitly assumes that the PlatformBuild script path is in PYTHONPATH.
     from PlatformBuildWorker import PlatformBuilder
@@ -256,7 +274,8 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     #
     # Now we can actually kick off a build.
     #
-    PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths, pluginManager, helper, sys.argv)
+    PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths,
+                         pluginManager, helper, sys.argv)
     retcode = PB.Go()
 
     if(retcode != 0):
@@ -265,26 +284,26 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     else:
         logging.critical("Success")
 
-    #get all vars needed as we can't do any logging after shutdown otherwise our log is cleared.  
-    #Log viewer
+    # get all vars needed as we can't do any logging after shutdown otherwise our log is cleared.
+    # Log viewer
     ep = PB.env.GetValue("LaunchBuildLogProgram")
     LogOnSuccess = PB.env.GetValue("LaunchLogOnSuccess")
     LogOnError = PB.env.GetValue("LaunchLogOnError")
-    
-    #end logging
-    logging.shutdown()
-    #no more logging
 
-    if(ep != None):
+    # end logging
+    logging.shutdown()
+    # no more logging
+
+    if(ep is not None):
         cmd = ep + " " + logfile
 
     #
     # Conditionally launch the shell to show build log
     #
     #
-    if( ((retcode != 0) and (LogOnError.upper() == "TRUE")) or (LogOnSuccess.upper() == "TRUE")):
+    if(((retcode != 0) and (LogOnError.upper() == "TRUE")) or (LogOnSuccess.upper() == "TRUE")):
         subprocess.Popen(cmd, shell=True)
-        
+
     sys.exit(retcode)
 
 
@@ -317,7 +336,8 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
 
     # Execute the requested process.
     if script_process == "setup":
-        setup_process(my_workspace_path, my_project_scope, my_required_repos, force_it=force_process)
+        setup_process(my_workspace_path, my_project_scope,
+                      my_required_repos, force_it=force_process)
     elif script_process == "update":
         update_process(my_workspace_path, my_project_scope)
     else:

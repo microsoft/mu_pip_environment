@@ -1,4 +1,4 @@
-## @file setup.py
+# @file setup.py
 # This contains setup info for mu_environment pip module
 #
 ##
@@ -41,13 +41,13 @@ setuptools.setup(
     license='BSD2',
     packages=setuptools.find_packages(),
     install_requires=[
-          'pyyaml',
-          'mu_python_library>=0.2.6'
+        'pyyaml',
+        'mu_python_library>=0.2.6'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha"
-    ],
+    ]
 )
