@@ -1,4 +1,4 @@
-# @file CommonBuildEntry.py
+## @file CommonBuildEntry.py
 # This module contains code that is shared between all the entry points for PlatformBUild
 # scripts.
 #
@@ -25,6 +25,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##
+
 import os
 import sys
 import re
@@ -50,21 +51,18 @@ def version_compare(version1, version2):
 
 #
 # Shell Command with Output Helper
-# This helper will attempt to run a shell command and return
-# the stdout results.
-# Also abstracts the bytes-vs-strings ambiguity in Python 2, 3.
+# This helper will attempt to run a shell command and return the results.
 # Will raise an error if return code is non-zero.
+
+
 def cmd_with_output(cmd_string, cwd):
     c = subprocess.Popen(cmd_string, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, cwd=cwd, shell=True)
     c.wait()
 
     # Get the data.
-    cmd_result = c.stdout.read()
-    # PYTHON COMPAT HACK BEGIN
-    if type(cmd_result) is bytes:
-        cmd_result = cmd_result.decode()
-    # PYTHON COMPAT HACK END
+    # Have to .decode because the stdout read gets bytes().
+    cmd_result = c.stdout.read().decode()
 
     # Check for errors.
     if c.returncode != 0:
@@ -76,6 +74,8 @@ def cmd_with_output(cmd_string, cwd):
 #
 # minimum_env_init() will attempt to follow all of the steps
 # necessary to get this process off the ground.
+
+
 def minimum_env_init(my_workspace_path, my_project_scope):
     # TODO: Check the Git version against minimums.
 
@@ -97,6 +97,8 @@ def minimum_env_init(my_workspace_path, my_project_scope):
 #
 # configure_base_logging() sets up only the logging that will
 # be used by all commands. (ie. doesn't configure any logging files)
+
+
 def configure_base_logging(mode="standard"):
     # Initialize logging.
     logger = logging.getLogger('')
@@ -127,85 +129,93 @@ def configure_base_logging(mode="standard"):
 
 
 def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_it=False):
+    def log_lines(level, lines):
+        for line in lines.split("\n"):
+            if line is not "":
+                logging.log(level, line)
+
+    # Pre-setup cleaning if "--force" is specified.
+    if force_it:
+        try:
+            # Clean and reset the main repo.
+            logging.critical("## Cleaning the root repo...")
+            cmd_with_output('git reset --hard', my_workspace_path)
+            log_lines(logging.INFO, cmd_with_output('git clean -xffd', my_workspace_path))
+            logging.critical("Done.\n")
+
+            # Clean any submodule repos.
+            if my_required_repos:
+                for required_repo in my_required_repos:
+                    logging.critical("## Cleaning Git repository: %s..." % required_repo)
+                    required_repo_path = os.path.normpath(os.path.join(my_workspace_path, required_repo))
+                    cmd_with_output('git reset --hard', required_repo_path)
+                    log_lines(logging.INFO, cmd_with_output('git clean -xffd', required_repo_path))
+                    logging.critical("Done.\n")
+
+        except RuntimeError as e:
+            logging.error("FAILED!\n")
+            logging.error("Error while trying to clean the environment!")
+            log_lines(logging.ERROR, str(e))
+            return
+
     # Grab the remaining Git repos.
     if my_required_repos:
-        # Git Repos: STEP 1 --------------------------------------
+        #### Git Repos: STEP 1 --------------------------------------
         # Make sure that the repos are all synced.
-        print("## Syncing Git repositories: %s..." %
-              ", ".join(my_required_repos))
-        cmd_parts = ("git", "submodule", "sync")
-        cmd_parts += my_required_repos
-        cmd_string = " ".join(cmd_parts)
         try:
-            c = subprocess.Popen(
-                cmd_string, stderr=subprocess.STDOUT, cwd=my_workspace_path, shell=True)
-            c.wait()
-            if c.returncode != 0:
-                raise RuntimeError(c.stdout.read())
-        except:
-            print("FAILED!\n")
-            print("Failed to sync required repositories!\n")
-            raise
-        print("Done.\n")
+            logging.critical("## Syncing Git repositories: %s..." % ", ".join(my_required_repos))
+            cmd_with_output('git submodule sync -- ' + " ".join(my_required_repos), my_workspace_path)
+            logging.critical("Done.\n")
+        except RuntimeError as e:
+            logging.error("FAILED!\n")
+            logging.error("Error while trying to synchronize the environment!")
+            log_lines(logging.ERROR, str(e))
+            return
 
-        # Git Repos: STEP 2 --------------------------------------
+        #### Git Repos: STEP 2 --------------------------------------
         # Iterate through all repos and see whether they should be fetched.
         for required_repo in my_required_repos:
-            print("## Checking Git repository: %s..." % required_repo)
+            try:
+                logging.critical("## Checking Git repository: %s..." % required_repo)
 
-            # Git Repos: STEP 2a ---------------------------------
-            # Need to determine whether to skip this repo.
-            repo_path = os.path.join(my_workspace_path, required_repo)
-            skip_repo = False
-            # If the repo exists (and we're not forcing things) make
-            # sure that it's not in a "dirty" state.
-            if os.path.exists(repo_path) and not force_it:
-                git_data = None
-                cmd_parts = ("git", "diff", required_repo)
-                cmd_string = " ".join(cmd_parts)
-                try:
-                    git_data = cmd_with_output(cmd_string, my_workspace_path)
-                except:
-                    # We don't actually care. We'll handle repo errors later.
-                    # We only care if we can get the data.
-                    pass
+                #### Git Repos: STEP 2a ---------------------------------
+                # Need to determine whether to skip this repo.
+                required_repo_path = os.path.normpath(os.path.join(my_workspace_path, required_repo))
+                skip_repo = False
+                # If the repo exists (and we're not forcing things) make
+                # sure that it's not in a "dirty" state.
+                if os.path.exists(required_repo_path) and not force_it:
+                    git_data = cmd_with_output('git diff ' + required_repo, my_workspace_path)
 
-                # If anything was returned, we should skip processing the repo.
-                # It is either on a different commit or it has local changes.
-                if git_data:
-                    print(
-                        "-- NOTE: Repo currently exists and appears to have local changes!")
-                    print("-- Skipping fetch!")
-                    skip_repo = True
+                    # If anything was returned, we should skip processing the repo.
+                    # It is either on a different commit or it has local changes.
+                    if git_data is not "":
+                        logging.info("-- NOTE: Repo currently exists and appears to have local changes!")
+                        logging.info("-- Skipping fetch!")
+                        skip_repo = True
 
-            # Git Repos: STEP 2b ---------------------------------
-            # If we're not skipping, grab it.
-            if not skip_repo or force_it:
-                print("## Fetching repo.")
-                cmd_parts = ("git", "submodule", "update", "--init",
-                             "--recursive", "--progress", required_repo)
-                cmd_string = " ".join(cmd_parts)
-                try:
-                    c = subprocess.Popen(
-                        cmd_string, stderr=subprocess.STDOUT, cwd=my_workspace_path, shell=True)
-                    c.wait()
-                    if c.returncode != 0:
-                        raise RuntimeError(c.stdout.read())
-                except:
-                    print("FAILED!\n")
-                    print("Failed to fetch required repositories!\n")
-                    raise
-            print("Done.\n")
+                #### Git Repos: STEP 2b ---------------------------------
+                # If we're not skipping, grab it.
+                if not skip_repo or force_it:
+                    logging.info("## Fetching repo.")
+                    log_lines(logging.INFO, cmd_with_output('git submodule update --init --recursive --progress ' + required_repo, my_workspace_path))
+
+                logging.critical("Done.\n")
+
+            except RuntimeError as e:
+                logging.error("FAILED!\n")
+                logging.error("Failed to fetch required repository!\n")
+                log_lines(logging.ERROR, str(e))
 
     # Now that we should have all of the required code,
     # we're ready to build the environment and fetch the
     # dependencies for this project.
-    print("## Fetching all external dependencies...")
+    logging.critical("## Fetching all external dependencies...")
     (build_env, shell_env) = minimum_env_init(
         my_workspace_path, my_project_scope)
     SelfDescribingEnvironment.UpdateDependencies(
         my_workspace_path, my_project_scope)
-    print("Done.\n")
+    logging.critical("Done.\n")
 
     # TODO: Install any certs any other things that might be required.
 
