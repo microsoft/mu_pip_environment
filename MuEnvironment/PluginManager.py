@@ -209,7 +209,8 @@ class IMuBuildPlugin(object):
     #   - Plugin Manager Instance
     #   - Plugin Helper Obj Instance
     #   - Junit Logger
-    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, JUnitLogger):
+    #   - output_stream the StringIO output stream from this plugin via logging
+    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, JUnitLogger, output_stream):
         pass
 
     ##
