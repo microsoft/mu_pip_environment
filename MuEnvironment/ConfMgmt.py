@@ -31,6 +31,7 @@ import shutil
 from MuEnvironment import ShellEnvironment
 import time
 from MuPythonLibrary.UtilityFunctions import RunCmd
+from MuEnvironment import VersionAggregator
 try:
     from StringIO import StringIO
 except ImportError:
@@ -43,6 +44,20 @@ class ConfMgmt():
         self.Logger = logging.getLogger("ConfMgmt")
         self.env = ShellEnvironment.GetBuildVars()
         self.__PopulateConf(OverrideConf, AdditionalTemplateConfDir)
+
+    #
+    # Get the version of a conf file
+    #
+    def __GetVersion(self, confFile):
+        version = "Unknown"
+        f = open(confFile, "r")
+        for l in f.readlines():
+            if(l.startswith("#!VERSION=")):
+                version = str(float(l.split("=")[1].split()[0].strip()))
+                break
+
+        f.close()
+        return version
 
     #
     # Compare the version of the existing conf file to the template file
@@ -150,7 +165,7 @@ class ConfMgmt():
                     time.sleep(30)
                 else:
                     self.Logger.debug("Conf file [%s] up-to-date", outfiles[x])
-
+            VersionAggregator.GetVersionAggregator().ReportVersion(outfiles[x], self.__GetVersion(outfiles[x]), VersionAggregator.VersionTypes.INFO)
             x = x + 1
         # end of while loop
 
@@ -177,6 +192,7 @@ class ConfMgmt():
 
     def ToolsDefConfigure(self):
         Tag = self.env.GetValue("TOOL_CHAIN_TAG")
+        VersionAggregator.GetVersionAggregator().ReportVersion("TOOL_CHAIN_TAG", Tag, VersionAggregator.VersionTypes.TOOL)
         if (Tag is not None) and (Tag.upper().startswith("VSLATEST")):
             p1 = None
             self.Logger.debug("Must find latest VS toolchain")
@@ -204,4 +220,8 @@ class ConfMgmt():
             os.environ["VS150TOOLVER"] = newest.strip()
         else:
             self.Logger.debug("Tool Chain Tag not set or not vs latest")
+
+        if "VS150TOOLVER" in os.environ:
+            VersionAggregator.GetVersionAggregator().ReportVersion("VS Tools", os.environ["VS150TOOLVER"], VersionAggregator.VersionTypes.TOOL)
+
         return 0

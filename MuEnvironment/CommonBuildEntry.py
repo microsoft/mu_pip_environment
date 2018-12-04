@@ -31,10 +31,31 @@ import sys
 import re
 import logging
 import subprocess
+import pkg_resources
 from datetime import datetime
+from MuEnvironment.MuGit import Repo
 from MuEnvironment import SelfDescribingEnvironment
 from MuEnvironment import PluginManager
-import pkg_resources
+from MuEnvironment import VersionAggregator
+from MuPythonLibrary.UtilityFunctions import RunCmd
+
+try:
+    from io import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+PIP_PACKAGES_LIST = ["mu_environment", "mu_python_library", "PyYaml"]
+
+#
+# Pass in a list of pip package names and they will be printed as well as
+# reported to the global VersionAggregator
+
+
+def display_pip_package_info(package_list):
+    for package in package_list:
+        version = pkg_resources.get_distribution(package).version
+        logging.info("{0} version: {1}".format(package, version))
+        VersionAggregator.GetVersionAggregator().ReportVersion(package, version, VersionAggregator.VersionTypes.TOOL)
 
 # Simplified Comparison Function borrowed from StackOverflow...
 # https://stackoverflow.com/questions/1714027/version-number-comparison
@@ -81,14 +102,28 @@ def minimum_env_init(my_workspace_path, my_project_scope):
 
     # Check the Python version against minimums.
     cur_py = "%d.%d.%d" % sys.version_info[:3]
+    VersionAggregator.GetVersionAggregator().ReportVersion("Python", cur_py, VersionAggregator.VersionTypes.TOOL)
+
     soft_min_py = "3.7"
     hard_min_py = "3.6"
+
     if version_compare(hard_min_py, cur_py) > 0:
         raise RuntimeError(
             "Please upgrade Python! Current version is %s. Minimum is %s." % (cur_py, hard_min_py))
     if version_compare(soft_min_py, cur_py) > 0:
         logging.critical("Please upgrade Python! Current version is %s. Recommended minimum is %s." % (
             cur_py, soft_min_py))
+
+    return_buffer = StringIO()
+    RunCmd("git", "--version", outstream=return_buffer)
+    git_version = return_buffer.getvalue().strip()
+    return_buffer.close()
+    VersionAggregator.GetVersionAggregator().ReportVersion("Git", git_version, VersionAggregator.VersionTypes.TOOL)
+    min_git = "2.11.0"
+    # This code is highly specific to the return value of "git version"...
+    cur_git = ".".join(git_version.split(' ')[2].split(".")[:3])
+    if version_compare(min_git, cur_git) > 0:
+        raise RuntimeError("Please upgrade Git! Current version is %s. Minimum is %s." % (cur_git, min_git))
 
     # Initialized the build environment.
     return SelfDescribingEnvironment.BootstrapEnvironment(my_workspace_path, my_project_scope)
@@ -249,8 +284,15 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
 
     logging.info("Log Started: " + datetime.strftime(datetime.now(), "%A, %B %d, %Y %I:%M%p"))
     logging.info("Running Python version: " + str(sys.version_info))
-    logging.info("Running mu_python_library version: " + pkg_resources.get_distribution("mu_python_library").version)
-    logging.info("Running mu_environment version: " + pkg_resources.get_distribution("mu_environment").version)
+
+    display_pip_package_info(PIP_PACKAGES_LIST)
+
+    repo = Repo(path=my_workspace_path)
+    VersionAggregator.GetVersionAggregator().ReportVersion("Parent Repo", repo.head.commit, VersionAggregator.VersionTypes.COMMIT)
+
+    for submodule_path in repo.submodules:
+        submodule = Repo(path=os.path.join(my_workspace_path, submodule_path))
+        VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit, VersionAggregator.VersionTypes.COMMIT)
 
     #
     # Next, get the environment set up.

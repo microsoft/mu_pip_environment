@@ -32,6 +32,7 @@ import shutil
 import time
 from io import StringIO
 import yaml
+from MuEnvironment import VersionAggregator
 from MuPythonLibrary.UtilityFunctions import RunCmd
 from MuPythonLibrary.UtilityFunctions import GetNugetCmd
 
@@ -242,6 +243,7 @@ class NugetDependency(ExternalDependency):
             result = False
 
         logging.debug("Verify '%s' returning '%s'." % (self.name, result))
+        VersionAggregator.GetVersionAggregator().ReportVersion(self.name, self.version, VersionAggregator.VersionTypes.INFO)
         return result
 
 

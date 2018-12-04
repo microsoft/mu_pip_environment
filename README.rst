@@ -12,10 +12,11 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
-next
+0.2.5
 ----
 
 Moved tests and added CI and local build documentation
+Added VersionAggregator to collect global version information
 
 0.2.4
 -----
