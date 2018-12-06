@@ -31,6 +31,7 @@ import sys
 import re
 import logging
 import subprocess
+import argparse
 import pkg_resources
 from datetime import datetime
 from MuEnvironment.MuGit import Repo
@@ -360,39 +361,55 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
 
 
 def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project_scope, my_module_pkgs, my_module_pkg_paths):
+    # This should live somewhere else as soon as someone else needs the logic.
+    # I just don't want to introduce a version dependency at this exact moment.
+    class IntermediateArgParser(argparse.ArgumentParser):
+        def parse_known_args(self, args=None, namespace=None):
+            # Explicitly pass sys.argv so that the script path isn't stripped off.
+            return super(IntermediateArgParser, self).parse_known_args(args if args else sys.argv, namespace)
+
+        def error(self, message):
+            raise RuntimeError(message)
+
+    # We will disable the help on this parser, because it's only for convenience.
+    parser = IntermediateArgParser(add_help=False, usage=None)
+    parser.add_argument('--andupdate', dest='update_first', action='store_true', default=False)
+    parser.add_argument('--force', action='store_true', default=False)
+    # Could do these also as a mutually exclusive thing, but why bother.
+    parser.add_argument('--vsmode', action='store_true', default=False)
+    parser.add_argument('-v', '--v', dest='verbose', action='store_true', default=False)
+
+    # Operational modes.
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument('--update', dest='script_process', action='store_const', const='update')
+    mode_group.add_argument('--setup', dest='script_process', action='store_const', const='setup')
+
+    try:
+        # Skim off the args we care about and leave the rest in sys.argv
+        (args, sys.argv) = parser.parse_known_args(namespace=argparse.Namespace(script_process='build'))
+    except RuntimeError as e:
+        print(e)
+        sys.exit(1)
+
     logging_mode = "standard"
-    script_process = "build"
-    force_process = False
-
-    # Check for some well-known parameters.
-    for arg in sys.argv:
-        if "--ANDUPDATE" == arg.upper():
-            script_process = "and_update"
-        if "--FORCE" == arg.upper():
-            force_process = True
-        if "--SETUP" == arg.upper():
-            logging_mode = "simple"
-            script_process = "setup"
-        if "--UPDATE" == arg.upper():
-            logging_mode = "simple"
-            script_process = "update"
-        if "--VERBOSE" == arg.upper():
-            logging_mode = "verbose"
-        if "--VSMODE" == arg.upper():
-            logging_mode = "vs"
-
-    # TODO: Scrub the parameters so they're not passed on to the next script.
+    # Change logging modes, if necessary.
+    if args.verbose:
+        logging_mode = 'verbose'
+    elif args.vsmode:
+        logging_mode = 'vs'
+    elif args.script_process in ('setup', 'update'):
+        logging_mode = 'simple'
 
     # Turn on logging for the remainder of the process.
     configure_base_logging(logging_mode)
 
     # Execute the requested process.
-    if script_process == "setup":
+    if args.script_process == "setup":
         setup_process(my_workspace_path, my_project_scope,
-                      my_required_repos, force_it=force_process)
-    elif script_process == "update":
+                      my_required_repos, force_it=args.force)
+    elif args.script_process == "update":
         update_process(my_workspace_path, my_project_scope)
     else:
-        if script_process == "and_update":
+        if args.update_first:
             update_process(my_workspace_path, my_project_scope)
         build_process(my_workspace_path, my_project_scope, my_module_pkg_paths)
