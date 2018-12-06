@@ -164,7 +164,7 @@ def configure_base_logging(mode="standard"):
 # anything else that's important.
 
 
-def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_it=False):
+def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_it=False, cache_path=None):
     def log_lines(level, lines):
         for line in lines.split("\n"):
             if line is not "":
@@ -234,7 +234,12 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
                 # If we're not skipping, grab it.
                 if not skip_repo or force_it:
                     logging.info("## Fetching repo.")
-                    log_lines(logging.INFO, cmd_with_output('git submodule update --init --recursive --progress ' + required_repo, my_workspace_path))
+                    # Using RunCmd for this one because the c.wait blocks incorrectly somehow.
+                    cmd_string = "submodule update --init --recursive --progress"
+                    if cache_path is not None:
+                        cmd_string += " --reference " + cache_path
+                    cmd_string += " " + required_repo
+                    RunCmd('git', cmd_string, my_workspace_path)
 
                 logging.critical("Done.\n")
 
@@ -375,6 +380,7 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
     parser = IntermediateArgParser(add_help=False, usage=None)
     parser.add_argument('--andupdate', dest='update_first', action='store_true', default=False)
     parser.add_argument('--force', action='store_true', default=False)
+    parser.add_argument('--omnicache', dest='omnicache_path', default=os.environ.get('OMNICACHE_PATH'))
     # Could do these also as a mutually exclusive thing, but why bother.
     parser.add_argument('--vsmode', action='store_true', default=False)
     parser.add_argument('-v', '--v', dest='verbose', action='store_true', default=False)
@@ -406,7 +412,7 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
     # Execute the requested process.
     if args.script_process == "setup":
         setup_process(my_workspace_path, my_project_scope,
-                      my_required_repos, force_it=args.force)
+                      my_required_repos, force_it=args.force, cache_path=args.omnicache_path)
     elif args.script_process == "update":
         update_process(my_workspace_path, my_project_scope)
     else:
