@@ -34,6 +34,10 @@ pip install -e .
 flake8 MuEnvironment
 ```
 
+!!! info
+    Newer editors are very helpful in resolving source formatting errors (whitespace, indentation, etc). 
+    In VSCode open the py file and use ++alt+shift+f++ to auto format.  
+
 2. Run pytest with coverage data collected
 
 ``` cmd

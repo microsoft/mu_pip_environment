@@ -32,25 +32,26 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="mu_environment",
-    version="0.2.5",
-    author="Max Knutsen",
+    author="Project Mu Team",
     author_email="maknutse@microsoft.com",
     description="Project Mu distributed dependency management, build, test, and tool environments.",
     long_description=long_description,
     url="https://github.com/microsoft/mu_pip_environment",
     license='BSD2',
     packages=setuptools.find_packages(),
+    use_scm_version=True,
+    setup_requires=['setuptools_scm'],
     entry_points={
         'console_scripts': ['omnicache=MuEnvironment.Omnicache:main']
     },
     install_requires=[
         'pyyaml',
-        'mu_python_library>=0.2.6'
+        'mu_python_library>=0.3.0'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
-        "Development Status :: 3 - Alpha"
+        "Development Status :: 4 - Beta"
     ]
 )
