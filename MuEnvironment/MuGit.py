@@ -93,14 +93,14 @@ class Repo(object):
     def _get_submodule_list(self):
         submodule_list = []
         return_buffer = StringIO()
-        params = "config --file .gitmodules --name-only --get-regexp path"
+        params = "config --file .gitmodules --get-regexp path"
         RunCmd("git", params, workingdir=self._path, outstream=return_buffer)
         p1 = return_buffer.getvalue().strip()
         return_buffer.close()
         if (len(p1) > 0):
             submodule_list = p1.split("\n")
             for i in range(0, len(submodule_list)):
-                submodule_list[i] = submodule_list[i].split('.')[1]
+                submodule_list[i] = submodule_list[i].split(' ')[1]
         return submodule_list
 
     def _get_remotes(self):

@@ -239,7 +239,7 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
                     if cache_path is not None:
                         cmd_string += " --reference " + cache_path
                     cmd_string += " " + required_repo
-                    RunCmd('git', cmd_string, my_workspace_path)
+                    RunCmd('git', cmd_string, workingdir=my_workspace_path)
 
                 logging.critical("Done.\n")
 
@@ -298,7 +298,10 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
 
     for submodule_path in repo.submodules:
         submodule = Repo(path=os.path.join(my_workspace_path, submodule_path))
-        VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit, VersionAggregator.VersionTypes.COMMIT)
+        if submodule.head is None:
+            logging.critical("Uninitialized submodule detected: {0}".format(submodule_path))
+        else:
+            VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit, VersionAggregator.VersionTypes.COMMIT)
 
     #
     # Next, get the environment set up.
