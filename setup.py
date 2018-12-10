@@ -40,6 +40,9 @@ setuptools.setup(
     url="https://github.com/microsoft/mu_pip_environment",
     license='BSD2',
     packages=setuptools.find_packages(),
+    entry_points={
+        'console_scripts': ['omnicache=MuEnvironment.Omnicache:main']
+    },
     install_requires=[
         'pyyaml',
         'mu_python_library>=0.2.6'
