@@ -381,17 +381,17 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
 
     # We will disable the help on this parser, because it's only for convenience.
     parser = IntermediateArgParser(add_help=False, usage=None)
-    parser.add_argument('--andupdate', dest='update_first', action='store_true', default=False)
-    parser.add_argument('--force', action='store_true', default=False)
-    parser.add_argument('--omnicache', dest='omnicache_path', default=os.environ.get('OMNICACHE_PATH'))
+    parser.add_argument('--andupdate', '--ANDUPDATE', '--AndUpdate', dest='update_first', action='store_true', default=False)
+    parser.add_argument('--force', '--FORCE', '--Force', action='store_true', default=False)
+    parser.add_argument('--omnicache', '--OMNICACHE', '--Omnicache', dest='omnicache_path', default=os.environ.get('OMNICACHE_PATH'))
     # Could do these also as a mutually exclusive thing, but why bother.
-    parser.add_argument('--vsmode', action='store_true', default=False)
-    parser.add_argument('-v', '--v', dest='verbose', action='store_true', default=False)
+    parser.add_argument('--vsmode', '--VSMODE', '--VsMode', action='store_true', default=False)
+    parser.add_argument('-v', '-V', '--verbose', '--VERBOSE', '--Verbose', dest='verbose', action='store_true', default=False)
 
     # Operational modes.
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument('--update', dest='script_process', action='store_const', const='update')
-    mode_group.add_argument('--setup', dest='script_process', action='store_const', const='setup')
+    mode_group.add_argument('--update', '--UPDATE', '--Update', dest='script_process', action='store_const', const='update')
+    mode_group.add_argument('--setup', '--SETUP', '--Setup', dest='script_process', action='store_const', const='setup')
 
     try:
         # Skim off the args we care about and leave the rest in sys.argv
