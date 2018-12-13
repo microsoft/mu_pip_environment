@@ -531,14 +531,17 @@ class UefiBuilder(object):
         print("------------------------------------------")
         print(" -h, --Help, -?              - Show this")
         print(" <key>=<value>               - Set an env variable for the pre/post build process")
-        print(" BLD_*_<key>=<value>         - Set a build flag for all build types.  Key=value will get passed to build process")
-        print(" BLD_<TARGET>_<key>=<value>  - Set a build flag for build type of <target>.  Key=value will get passed to build process for given build type")
+        print(" BLD_*_<key>=<value>         - Set a build flag for all build types.  "
+              "Key=value will get passed to build process")
+        print(" BLD_<TARGET>_<key>=<value>  - Set a build flag for build type of <target>.  "
+              "Key=value will get passed to build process for given build type")
         print(" --skipbuild                 - Skip the build process ")
         print(" --skipprebuild              - Skip prebuild process")
         print(" --skippostbuild             - Skip postbuild process")
         print(" --FlashRom                  - Flash rom after build.  Only works with single target")
         print(" --FlashOnly                 - Flash rom.  Rom must be built previously.  Only works with single target")
-        print(" --UpdateConf                - Update Conf.  Builders Conf files will be replaced with latest template files")
+        print(" --UpdateConf                - Update Conf.  Builders Conf files will be "
+              "replaced with latest template files")
         print(" --Clean                     - Clean.  Remove all old build artifacts and intermediate files")
         print(" --CleanOnly                 - Clean Only.  Do clean operation and don't build just exit.")
 

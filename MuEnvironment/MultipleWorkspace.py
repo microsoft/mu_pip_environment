@@ -22,7 +22,8 @@ import os
 # @param class:
 #
 # @var WORKSPACE:      defined the current WORKSPACE
-# @var PACKAGES_PATH:  defined the other WORKSAPCE, if current WORKSPACE is invalid, search valid WORKSPACE from PACKAGES_PATH
+# @var PACKAGES_PATH:  defined the other WORKSAPCE, if current WORKSPACE is invalid,
+#                      search valid WORKSPACE from PACKAGES_PATH
 #
 
 
