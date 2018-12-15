@@ -46,9 +46,11 @@ class VersionAggregator(object):
         """
         if key in self.Versions:
             if self.Versions[key]["version"] == value:
-                logging.warning("VersionAggregator: This {0}:{1} key/value pair was already registered".format(key, value))
+                logging.warning("VersionAggregator: This {0}:{1} key/value pair "
+                                "was already registered".format(key, value))
             else:
-                error = "VersionAggregator: {0} key registered with a different value\n\tOld:{1}\n\tNew:{2}".format(key, self.Versions[key]["version"], value)
+                error = "VersionAggregator: {0} key registered with a different value\n\t" \
+                        "Old:{1}\n\tNew:{2}".format(key, self.Versions[key]["version"], value)
                 logging.error(error)
                 raise Exception(error)
             return

@@ -294,14 +294,16 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     display_pip_package_info(PIP_PACKAGES_LIST)
 
     repo = Repo(path=my_workspace_path)
-    VersionAggregator.GetVersionAggregator().ReportVersion("Parent Repo", repo.head.commit, VersionAggregator.VersionTypes.COMMIT)
+    VersionAggregator.GetVersionAggregator().ReportVersion("Parent Repo", repo.head.commit,
+                                                           VersionAggregator.VersionTypes.COMMIT)
 
     for submodule_path in repo.submodules:
         submodule = Repo(path=os.path.join(my_workspace_path, submodule_path))
         if submodule.head is None:
             logging.critical("Uninitialized submodule detected: {0}".format(submodule_path))
         else:
-            VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit, VersionAggregator.VersionTypes.COMMIT)
+            VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit,
+                                                                   VersionAggregator.VersionTypes.COMMIT)
 
     #
     # Next, get the environment set up.
@@ -368,7 +370,8 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     sys.exit(retcode)
 
 
-def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project_scope, my_module_pkgs, my_module_pkg_paths):
+def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project_scope,
+                my_module_pkgs, my_module_pkg_paths):
     # This should live somewhere else as soon as someone else needs the logic.
     # I just don't want to introduce a version dependency at this exact moment.
     class IntermediateArgParser(argparse.ArgumentParser):
@@ -381,17 +384,22 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
 
     # We will disable the help on this parser, because it's only for convenience.
     parser = IntermediateArgParser(add_help=False, usage=None)
-    parser.add_argument('--andupdate', '--ANDUPDATE', '--AndUpdate', dest='update_first', action='store_true', default=False)
+    parser.add_argument('--andupdate', '--ANDUPDATE', '--AndUpdate', dest='update_first',
+                        action='store_true', default=False)
     parser.add_argument('--force', '--FORCE', '--Force', action='store_true', default=False)
-    parser.add_argument('--omnicache', '--OMNICACHE', '--Omnicache', dest='omnicache_path', default=os.environ.get('OMNICACHE_PATH'))
+    parser.add_argument('--omnicache', '--OMNICACHE', '--Omnicache', dest='omnicache_path',
+                        default=os.environ.get('OMNICACHE_PATH'))
     # Could do these also as a mutually exclusive thing, but why bother.
     parser.add_argument('--vsmode', '--VSMODE', '--VsMode', action='store_true', default=False)
-    parser.add_argument('-v', '-V', '--verbose', '--VERBOSE', '--Verbose', dest='verbose', action='store_true', default=False)
+    parser.add_argument('-v', '-V', '--verbose', '--VERBOSE', '--Verbose', dest='verbose',
+                        action='store_true', default=False)
 
     # Operational modes.
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument('--update', '--UPDATE', '--Update', dest='script_process', action='store_const', const='update')
-    mode_group.add_argument('--setup', '--SETUP', '--Setup', dest='script_process', action='store_const', const='setup')
+    mode_group.add_argument('--update', '--UPDATE', '--Update', dest='script_process',
+                            action='store_const', const='update')
+    mode_group.add_argument('--setup', '--SETUP', '--Setup', dest='script_process',
+                            action='store_const', const='setup')
 
     try:
         # Skim off the args we care about and leave the rest in sys.argv

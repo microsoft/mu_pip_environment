@@ -243,7 +243,8 @@ class NugetDependency(ExternalDependency):
             result = False
 
         logging.debug("Verify '%s' returning '%s'." % (self.name, result))
-        VersionAggregator.GetVersionAggregator().ReportVersion(self.name, self.version, VersionAggregator.VersionTypes.INFO)
+        VersionAggregator.GetVersionAggregator().ReportVersion(self.name, self.version,
+                                                               VersionAggregator.VersionTypes.INFO)
         return result
 
 

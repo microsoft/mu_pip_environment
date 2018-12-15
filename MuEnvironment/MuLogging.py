@@ -106,7 +106,8 @@ def setup_logging(workspace, filename=None,
 
 
 # sets up a colored console logger
-def setup_console_logging(use_azure_colors, use_color=True, level=logging.INFO, formatter_msg="%(levelname)s - %(message)s"):
+def setup_console_logging(use_azure_colors, use_color=True, level=logging.INFO,
+                          formatter_msg="%(levelname)s - %(message)s"):
     if use_azure_colors or use_color:
         formatter = MuAnsiHandler.ColoredFormatter(formatter_msg, use_azure=use_azure_colors)
         console = MuAnsiHandler.ColoredStreamHandler()

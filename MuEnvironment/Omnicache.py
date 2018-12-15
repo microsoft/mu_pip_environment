@@ -44,7 +44,9 @@ class OmniCacheConfig():
             self._Transition(content)
 
     def Save(self):
-        data = {"version": self.version, "remotes": self.remotes, "last_change": datetime.datetime.strftime(datetime.datetime.now(), "%A, %B %d, %Y %I:%M%p")}
+        data = {"version": self.version, "remotes": self.remotes,
+                "last_change": datetime.datetime.strftime(datetime.datetime.now(),
+                                                          "%A, %B %d, %Y %I:%M%p")}
         with open(self.filepath, 'w') as outfile:
             yaml.dump(data, outfile, default_flow_style=False)
 
@@ -177,7 +179,8 @@ def ConsistencyCheckCacheConfig(config):
     gitnames = set(gitnames)
     for remote in config.remotes:
         if(remote["name"] not in gitnames):
-            logging.warning("Found entry in config not in git. Name: {0} Url: {1}".format(remote["name"], remote["url"]))
+            logging.warning("Found entry in config not in git. Name: {0} Url: {1}".format(remote["name"],
+                                                                                          remote["url"]))
             param = "remote add {0} {1}".format(remote["name"], remote["url"])
             UtilityFunctions.RunCmd("git", param)
 
@@ -207,15 +210,24 @@ def FetchEntry(name, tags=False):
 def get_cli_options():
     parser = argparse.ArgumentParser(description='Tool to provide easy method create and manage the OMNICACHE', )
     parser.add_argument(dest="cache_dir", help="path to an existing or desired OMNICACHE directory")
-    parser.add_argument("--new", dest="new", help="Initialize the OMNICACHE.  MUST NOT EXIST", action="store_true", default=False)
-    parser.add_argument("--init", dest="init", help="Initialize the OMNICACHE if it doesn't already exist", action="store_true", default=False)
-    parser.add_argument("-l", "--list", dest="list", default=False, action="store_true", help="List config of OMNICACHE")
-    parser.add_argument("-a", "--add", dest="add", nargs='*', action="append", help="Add config entry to OMNICACHE <name> <url> <Sync tags optional default=False>", default=[])
-    parser.add_argument("-c", "--configfile", dest="input_config_file", default=None, help="Add new entries from config file to OMNICACHE")
-    parser.add_argument("-u", "--update", "--fetch", dest="fetch", help="Update the Omnicache.  All cache changes also cause a fetch", default=False)
-    parser.add_argument("-r", "--remove", dest="remove", nargs="?", action="append", help="remove config entry from OMNICACHE <name>", default=[])
+    parser.add_argument("--new", dest="new", help="Initialize the OMNICACHE.  MUST NOT EXIST",
+                        action="store_true", default=False)
+    parser.add_argument("--init", dest="init", help="Initialize the OMNICACHE if it doesn't already exist",
+                        action="store_true", default=False)
+    parser.add_argument("-l", "--list", dest="list", default=False, action="store_true",
+                        help="List config of OMNICACHE")
+    parser.add_argument("-a", "--add", dest="add", nargs='*', action="append",
+                        help="Add config entry to OMNICACHE <name> <url> <Sync tags optional default=False>",
+                        default=[])
+    parser.add_argument("-c", "--configfile", dest="input_config_file", default=None,
+                        help="Add new entries from config file to OMNICACHE")
+    parser.add_argument("-u", "--update", "--fetch", dest="fetch",
+                        help="Update the Omnicache.  All cache changes also cause a fetch", default=False)
+    parser.add_argument("-r", "--remove", dest="remove", nargs="?", action="append",
+                        help="remove config entry from OMNICACHE <name>", default=[])
     parser.add_argument('--version', action='version', version='%(prog)s ' + OMNICACHE_VERSION)
-    parser.add_argument("--debug", dest="debug", help="Output all debug messages to console", action="store_true", default=False)
+    parser.add_argument("--debug", dest="debug", help="Output all debug messages to console",
+                        action="store_true", default=False)
     args = parser.parse_args()
     return args
 

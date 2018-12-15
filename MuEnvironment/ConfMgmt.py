@@ -161,11 +161,13 @@ class ConfMgmt():
                 if(self.__OlderVersion(outfiles[x], TemplateFilePath)):
                     # Conf dir is older.  Warn user.
                     self.Logger.critical(
-                        "Conf file [%s] out-of-date.  Please update your conf files!  Sleeping 30 seconds to encourage update....", outfiles[x])
+                        "Conf file [%s] out-of-date.  Please update your conf files!  "
+                        "Sleeping 30 seconds to encourage update....", outfiles[x])
                     time.sleep(30)
                 else:
                     self.Logger.debug("Conf file [%s] up-to-date", outfiles[x])
-            VersionAggregator.GetVersionAggregator().ReportVersion(outfiles[x], self.__GetVersion(outfiles[x]), VersionAggregator.VersionTypes.INFO)
+            VersionAggregator.GetVersionAggregator().ReportVersion(outfiles[x], self.__GetVersion(outfiles[x]),
+                                                                   VersionAggregator.VersionTypes.INFO)
             x = x + 1
         # end of while loop
 
@@ -192,7 +194,8 @@ class ConfMgmt():
 
     def ToolsDefConfigure(self):
         Tag = self.env.GetValue("TOOL_CHAIN_TAG")
-        VersionAggregator.GetVersionAggregator().ReportVersion("TOOL_CHAIN_TAG", Tag, VersionAggregator.VersionTypes.TOOL)
+        VersionAggregator.GetVersionAggregator().ReportVersion("TOOL_CHAIN_TAG", Tag,
+                                                               VersionAggregator.VersionTypes.TOOL)
         if (Tag is not None) and (Tag.upper().startswith("VSLATEST")):
             p1 = None
             self.Logger.debug("Must find latest VS toolchain")
@@ -222,6 +225,7 @@ class ConfMgmt():
             self.Logger.debug("Tool Chain Tag not set or not vs latest")
 
         if "VS150TOOLVER" in os.environ:
-            VersionAggregator.GetVersionAggregator().ReportVersion("VS Tools", os.environ["VS150TOOLVER"], VersionAggregator.VersionTypes.TOOL)
+            VersionAggregator.GetVersionAggregator().ReportVersion("VS Tools", os.environ["VS150TOOLVER"],
+                                                                   VersionAggregator.VersionTypes.TOOL)
 
         return 0

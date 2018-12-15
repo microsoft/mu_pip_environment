@@ -210,7 +210,8 @@ class IMuBuildPlugin(object):
     #   - Plugin Helper Obj Instance
     #   - Junit Logger
     #   - output_stream the StringIO output stream from this plugin via logging
-    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig, pkgconfig, environment, PLM, PLMHelper, JUnitLogger, output_stream):
+    def RunBuildPlugin(self, packagename, Edk2pathObj, args, repoconfig,
+                       pkgconfig, environment, PLM, PLMHelper, JUnitLogger, output_stream):
         pass
 
     ##
@@ -231,7 +232,8 @@ class IMuBuildPlugin(object):
     ##
 
     def ValidateConfig(self, config, name=""):
-        # rather than doing the validation in the plugin - perhaps the plugin can return their required list and their optional list
+        # rather than doing the validation in the plugin, perhaps the plugin
+        # can return their required list and their optional list
         # raise an exception if error is found
         pass
 

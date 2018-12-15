@@ -148,8 +148,9 @@ class SelfDescribingEnvironment(object):
                         # If we're attempting to override someting that's already been processed,
                         # we should spit out a warning of sort.
                         if cur_override_id in known_ids:
-                            logging.warning("Descriptor '%s' is trying to override iID '%s', but it's already been processed." % (
-                                cur_file, cur_override_id))
+                            logging.warning("Descriptor '%s' is trying to override iID '%s', "
+                                            "but it's already been processed." %
+                                            (cur_file, cur_override_id))
                         active_overrides[cur_override_id] = descriptor['descriptor_file']
 
             return tuple(final_list)

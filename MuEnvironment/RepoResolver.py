@@ -71,7 +71,8 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
         else:
             if(ignore):
                 logging.warning(
-                    "Folder {0} is not a git repo but Force parameter not used.  Ignore State Allowed.".format(git_path))
+                    "Folder {0} is not a git repo but Force parameter not used.  "
+                    "Ignore State Allowed.".format(git_path))
                 return
             else:
                 logging.critical(
@@ -90,7 +91,8 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
         else:
             if(ignore):
                 logging.warning(
-                    "Folder {0} is a git repo but is dirty and Force parameter not used.  Ignore State Allowed.".format(git_path))
+                    "Folder {0} is a git repo but is dirty and Force parameter not used.  "
+                    "Ignore State Allowed.".format(git_path))
                 return
             else:
                 logging.critical(
@@ -102,13 +104,15 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
         if force:
             clear_folder(git_path)
             logging.warning(
-                "Folder {0} is a git repo but it is at a different repo and is being overwritten as requested!".format(git_path))
+                "Folder {0} is a git repo but it is at a different repo and is "
+                "being overwritten as requested!".format(git_path))
             clone_repo(git_path, dependency)
             checkout(git_path, dependency, Repo(git_path), True, False)
         else:
             if ignore:
                 logging.warning(
-                    "Folder {0} is a git repo pointed at a different remote.  Can't checkout or sync state".format(git_path))
+                    "Folder {0} is a git repo pointed at a different remote.  "
+                    "Can't checkout or sync state".format(git_path))
                 return
             else:
                 logging.critical("The URL of the git Repo {2} in the folder {0} does not match {1}".format(
