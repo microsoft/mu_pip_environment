@@ -3,6 +3,13 @@
 MU Environment
 ==============
 
+.. |build_status_windows| image:: https://dev.azure.com/projectmu/mu%20pip/_apis/build/status/Environment/Mu%20Pip%20Environment%20-%20PR%20Gate%20(Windows)?branchName=master
+.. |build_status_linux| image:: https://dev.azure.com/projectmu/mu%20pip/_apis/build/status/Environment/Mu%20Pip%20Environment%20-%20PR%20Gate%20(Linux%20-%20Ubuntu%201604)?branchName=master
+
+|build_status_windows| Current build status for master on Windows
+
+|build_status_linux| Current build status for master on Linux
+
 About
 =====
 
