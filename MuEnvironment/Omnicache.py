@@ -28,7 +28,7 @@ class OmniCacheConfig():
         if(os.path.isfile(self.filepath)):
             self._Load()
         else:
-            self.remotes = []
+            self.remotes = {}
 
     def _Load(self):
         with open(self.filepath) as ymlfile:
@@ -38,13 +38,13 @@ class OmniCacheConfig():
             raise Exception("Unsupported Config Version (None)")
         elif content["version"] == self.version:
             # parse yml into config data
-            self.remotes = content["remotes"]
+            self.remotes = {x["name"]: x for x in content["remotes"]}
             self.last_change = content["last_change"]
         else:
             self._Transition(content)
 
     def Save(self):
-        data = {"version": self.version, "remotes": self.remotes,
+        data = {"version": self.version, "remotes": list(self.remotes.values()),
                 "last_change": datetime.datetime.strftime(datetime.datetime.now(),
                                                           "%A, %B %d, %Y %I:%M%p")}
         with open(self.filepath, 'w') as outfile:
@@ -59,7 +59,7 @@ class OmniCacheConfig():
         logging.log(level, " Filepath: {0}".format(self.filepath))
         logging.log(level, " Version: {%d}", self.version)
         logging.log(level, " Remotes({%d})", len(self.remotes))
-        for remote in self.remotes:
+        for remote in self.remotes.values():
             rstring = "Name: {0} Url: {1} TagSync: {2}".format(remote["name"], remote["url"], ("tag" in remote))
             logging.log(level, "   " + rstring)
 
@@ -67,12 +67,14 @@ class OmniCacheConfig():
         remote = {"name": name, "url": url}
         if(tags):
             remote["tag"] = True
-        self.remotes.append(remote)
+        self.remotes[name] = remote
 
     def Remove(self, name):
-        for x in self.remotes:
-            if x["name"] == name:
-                self.remotes.remove(x)
+        if name in self.remotes:
+            del self.remotes[name]
+
+    def Contains(self, name):
+        return name in self.remotes
 
 
 OMNICACHE_VERSION = "0.9"
@@ -93,8 +95,8 @@ def CommonFilePathHandler(path):
 def AddEntriesFromConfig(config, input_config_file):
     '''
     Add config entries found in the config file
-    to the omnicache.  Only add new entries not
-    already in the omnicache based on name
+    to the omnicache. Entries already in omnicache
+    with the same name will be updated.
 
     return
         the number of entries added to cache
@@ -105,16 +107,12 @@ def AddEntriesFromConfig(config, input_config_file):
         content = yaml.safe_load(ymlfile)
     if("remotes" in content):
         for remote in content["remotes"]:
-            if(remote["name"] in (x["name"] for x in config.remotes)):
-                logging.debug("remote with name: {0} already in cache".format(remote["name"]))
-                continue
-
             if("tag" in remote):
                 AddEntry(config, remote["name"], remote["url"], bool(remote["tag"]))
             else:
                 AddEntry(config, remote["name"], remote["url"])
             count += 1
-    return count
+    return (count, content["remotes"])
 
 
 def InitOmnicache(path):
@@ -124,8 +122,13 @@ def InitOmnicache(path):
 
 
 def AddEntry(config, name, url, tags=False):
-    logging.info("Adding remote ({0} : {1}) to Omnicache".format(name, url))
-    param = "remote add {0} {1}".format(name, url)
+    if config.Contains(name):
+        logging.info("Updating remote ({0} : {1}) in Omnicache".format(name, url))
+        param = "remote set-url {0} {1}".format(name, url)
+    else:
+        logging.info("Adding remote ({0} : {1}) to Omnicache".format(name, url))
+        param = "remote add {0} {1}".format(name, url)
+
     if(UtilityFunctions.RunCmd("git", param) == 0):
         config.Add(name, url, tags)
     else:
@@ -171,13 +174,13 @@ def ConsistencyCheckCacheConfig(config):
             continue
         git = line.split()
         gitnames.append(git[0])  # save for later
-        if(git[0] not in (x["name"] for x in config.remotes)):
+        if(not config.Contains(git[0])):
             logging.warning("Found entry in git not in config.  Name: {0} Url: {1}".format(git[0], git[1]))
             config.Add(git[0], git[1])
             config.Save()
 
     gitnames = set(gitnames)
-    for remote in config.remotes:
+    for remote in config.remotes.values():
         if(remote["name"] not in gitnames):
             logging.warning("Found entry in config not in git. Name: {0} Url: {1}".format(remote["name"],
                                                                                           remote["url"]))
@@ -221,8 +224,11 @@ def get_cli_options():
                         default=[])
     parser.add_argument("-c", "--configfile", dest="input_config_file", default=None,
                         help="Add new entries from config file to OMNICACHE")
-    parser.add_argument("-u", "--update", "--fetch", dest="fetch",
-                        help="Update the Omnicache.  All cache changes also cause a fetch", default=False)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-u", "--update", "--fetch", dest="fetch", action="store_true",
+                       help="Update the Omnicache.  All cache changes also cause a fetch", default=False)
+    group.add_argument("--no-fetch", dest="no_fetch", action="store_true",
+                       help="Prevent auto-fetch if implied by other arguments.", default=False)
     parser.add_argument("-r", "--remove", dest="remove", nargs="?", action="append",
                         help="remove config entry from OMNICACHE <name>", default=[])
     parser.add_argument('--version', action='version', version='%(prog)s ' + OMNICACHE_VERSION)
@@ -240,6 +246,7 @@ def main():
     logger.addHandler(console)
 
     ErrorCode = 0
+    auto_fetch = False
 
     # arg parse
     args = get_cli_options()
@@ -270,7 +277,7 @@ def main():
             logging.critical("--new argument given but OMNICACHE path already exists!")
             return -1
         InitOmnicache(args.cache_dir)
-        args.fetch = True
+        auto_fetch = True
 
     if(args.init):
         if(os.path.isdir(args.cache_dir)):
@@ -278,7 +285,7 @@ def main():
                 logging.debug("OMNICACHE already exists.  No need to initialize")
         else:
             InitOmnicache(args.cache_dir)
-        args.fetch = True
+        auto_fetch = True
 
     # Check to see if exists
     if(not os.path.isdir(args.cache_dir)):
@@ -291,7 +298,7 @@ def main():
     os.chdir(args.cache_dir)
 
     if(len(args.add) > 0):
-        args.fetch = True
+        auto_fetch = True
         for inputdata in args.add:
             if len(inputdata) == 2:
                 AddEntry(omnicache_config, inputdata[0], inputdata[1])
@@ -302,9 +309,9 @@ def main():
                 return -3
 
     if(args.input_config_file is not None):
-        count = AddEntriesFromConfig(omnicache_config, args.input_config_file)
+        (count, input_config_remotes) = AddEntriesFromConfig(omnicache_config, args.input_config_file)
         if(count > 0):
-            args.fetch = True
+            auto_fetch = True
 
     if(len(args.remove) > 0):
         for inputdata in args.remove:
@@ -312,10 +319,16 @@ def main():
 
     omnicache_config.Save()
 
-    if(args.fetch):
+    if(args.fetch or (auto_fetch and not args.no_fetch)):
         logging.critical("Updating OMNICACHE")
-        for remote in omnicache_config.remotes:
-            ret = FetchEntry(remote["name"], ("tag" in remote))
+        # as an optimization, if input config file provided, only fetch remotes specified in input config
+        # otherwise, fetch all remotes in the OmniCache
+        if (input_config_remotes is not None):
+            remotes = (x["name"] for x in input_config_remotes)
+        else:
+            remotes = omnicache_config.remotes.keys()
+        for remote in remotes:
+            ret = FetchEntry(omnicache_config.remotes[remote]["name"], ("tag" in omnicache_config.remotes[remote]))
             if(ret != 0) and (ErrorCode == 0):
                 ErrorCode = ret
 
@@ -327,7 +340,7 @@ def main():
         if(len(omnicache_config.remotes) == 0):
             logging.warning("No Remotes to show")
 
-        for remote in omnicache_config.remotes:
+        for remote in omnicache_config.remotes.values():
             rstring = "Name: {0}\n  Url: {1}\n  Sync Tags: {2}".format(remote["name"], remote["url"], ("tag" in remote))
             print(" " + rstring + "\n\n")
 
