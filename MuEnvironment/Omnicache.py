@@ -247,6 +247,7 @@ def main():
 
     ErrorCode = 0
     auto_fetch = False
+    input_config_remotes = None
 
     # arg parse
     args = get_cli_options()
