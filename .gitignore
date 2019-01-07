@@ -4,6 +4,7 @@ Lib
 dist
 *.egg-info
 build.
+/.eggs
 /cov_html
 /.pytest_cache
 /pytest_MuEnvironment_report.html

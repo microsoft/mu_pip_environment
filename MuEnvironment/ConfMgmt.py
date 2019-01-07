@@ -43,6 +43,10 @@ class ConfMgmt():
     def __init__(self, OverrideConf, AdditionalTemplateConfDir):
         self.Logger = logging.getLogger("ConfMgmt")
         self.env = ShellEnvironment.GetBuildVars()
+        if (self.env.GetValue("TOOL_CHAIN_TAG") is None) or \
+                (self.env.GetValue("WORKSPACE") is None) or \
+                (self.env.GetValue("EDK2_BASE_TOOLS_DIR") is None):
+            raise Exception("TOOL_CHAIN_TAG and EDK2_BASE_TOOLS_DIR must be set prior to running ConfMgmt")
         self.__PopulateConf(OverrideConf, AdditionalTemplateConfDir)
 
     #
@@ -108,12 +112,28 @@ class ConfMgmt():
             # check if the conf file already exists
             # don't overwrite if exists.  Popup if version is older in conf
             TemplateFilePath = ""
+            Tag = self.env.GetValue("TOOL_CHAIN_TAG")
 
             #
             # Get the Override template if it exist
             #
             if(AdditionalTemplateConfDir is not None):
                 fp = os.path.join(AdditionalTemplateConfDir, tfiles[x] + ".ms")
+                if os.path.isfile(fp):
+                    TemplateFilePath = fp
+
+            #
+            # If not found, try toolchain specific templates templates
+            #
+            if(TemplateFilePath == "" and Tag.startswith("VS")):
+                fp = os.path.join(self.env.GetValue(
+                    "EDK2_BASE_TOOLS_DIR"), tfiles[x] + ".vs")
+                if os.path.isfile(fp):
+                    TemplateFilePath = fp
+
+            if(TemplateFilePath == "" and Tag.startswith("GCC")):
+                fp = os.path.join(self.env.GetValue(
+                    "EDK2_BASE_TOOLS_DIR"), tfiles[x] + ".gcc")
                 if os.path.isfile(fp):
                     TemplateFilePath = fp
 
