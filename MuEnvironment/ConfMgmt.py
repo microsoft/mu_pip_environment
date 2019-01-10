@@ -43,8 +43,7 @@ class ConfMgmt():
     def __init__(self, OverrideConf, AdditionalTemplateConfDir):
         self.Logger = logging.getLogger("ConfMgmt")
         self.env = ShellEnvironment.GetBuildVars()
-        if (self.env.GetValue("TOOL_CHAIN_TAG") is None) or \
-                (self.env.GetValue("WORKSPACE") is None) or \
+        if (self.env.GetValue("WORKSPACE") is None) or \
                 (self.env.GetValue("EDK2_BASE_TOOLS_DIR") is None):
             raise Exception("TOOL_CHAIN_TAG and EDK2_BASE_TOOLS_DIR must be set prior to running ConfMgmt")
         self.__PopulateConf(OverrideConf, AdditionalTemplateConfDir)
@@ -113,6 +112,9 @@ class ConfMgmt():
             # don't overwrite if exists.  Popup if version is older in conf
             TemplateFilePath = ""
             Tag = self.env.GetValue("TOOL_CHAIN_TAG")
+
+            if Tag is None:
+                Tag = ""
 
             #
             # Get the Override template if it exist
