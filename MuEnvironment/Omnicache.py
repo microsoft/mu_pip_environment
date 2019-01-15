@@ -11,6 +11,7 @@ except ImportError:
 
 from MuEnvironment import MuLogging
 from MuPythonLibrary import UtilityFunctions
+from MuEnvironment import MuGit
 
 
 class OmniCacheConfig():
@@ -25,7 +26,7 @@ class OmniCacheConfig():
         self.version = OmniCacheConfig.CONFIG_VERSION
         self.filepath = absfilepath
         self.last_change = datetime.datetime.strftime(datetime.datetime.now(), "%A, %B %d, %Y %I:%M%p")
-        if(os.path.isfile(self.filepath)):
+        if os.path.isfile(self.filepath):
             self._Load()
         else:
             self.remotes = {}
@@ -64,14 +65,30 @@ class OmniCacheConfig():
             logging.log(level, "   " + rstring)
 
     def Add(self, name, url, tags=False):
+        # check if this already exists
+        if self.Contains_url(url):
+            logging.warning("Skipping add this entry %s %s" % (name, url))
+            return
+        # if the name already exists, we overwrite it
         remote = {"name": name, "url": url}
-        if(tags):
+        if tags:
             remote["tag"] = True
         self.remotes[name] = remote
 
-    def Remove(self, name):
-        if name in self.remotes:
-            del self.remotes[name]
+    def Contains_url(self, url):
+        for x in self.remotes.values():
+            if x["url"] == url:
+                return True
+        return False
+
+    def Contains_name(self, name):
+        for x in self.remotes.values():
+            if x["name"] == name:
+                return True
+        return False
+
+    def Remove(self, del_name):
+        del self.remotes[del_name]
 
     def Contains(self, name):
         return name in self.remotes
@@ -86,7 +103,7 @@ def CommonFilePathHandler(path):
     function to check for absolute path and if not
     concat with current dir and return absolute real path
     '''
-    if(not os.path.isabs(path)):
+    if not os.path.isabs(path):
         path = os.path.join(os.getcwd(), path)
     path = os.path.realpath(path)
     return path
@@ -105,9 +122,12 @@ def AddEntriesFromConfig(config, input_config_file):
     count = 0
     with open(input_config_file) as ymlfile:
         content = yaml.safe_load(ymlfile)
-    if("remotes" in content):
+    if "remotes" in content:
         for remote in content["remotes"]:
-            if("tag" in remote):
+            if config.Contains_url(remote["url"]):
+                logging.debug("remote with name: {0} already in cache".format(remote["name"]))
+                continue
+            if "tag" in remote:
                 AddEntry(config, remote["name"], remote["url"], bool(remote["tag"]))
             else:
                 AddEntry(config, remote["name"], remote["url"])
@@ -122,6 +142,9 @@ def InitOmnicache(path):
 
 
 def AddEntry(config, name, url, tags=False):
+    logging.info("Adding remote ({0} : {1}) to Omnicache".format(name, url))
+    param = "remote add {0} {1}".format(name, url)
+
     if config.Contains(name):
         logging.info("Updating remote ({0} : {1}) in Omnicache".format(name, url))
         param = "remote set-url {0} {1}".format(name, url)
@@ -138,7 +161,7 @@ def AddEntry(config, name, url, tags=False):
 def RemoveEntry(config, name):
     logging.info("Removing remote named {0}".format(name))
     param = "remote remove {0}".format(name)
-    if(UtilityFunctions.RunCmd("git", param) == 0):
+    if UtilityFunctions.RunCmd("git", param) == 0:
         config.Remove(name)
     else:
         logging.error("Failed to remove remote for {0}".format(name))
@@ -161,7 +184,7 @@ def ConsistencyCheckCacheConfig(config):
     gitnames = []  # list of git remote names as found in git repo
     gitret = UtilityFunctions.RunCmd("git", param, outstream=out)
 
-    if(gitret != 0):
+    if gitret != 0:
         logging.critical("Could not list git remotes")
         return gitret
 
@@ -169,7 +192,7 @@ def ConsistencyCheckCacheConfig(config):
     out.close()
     for line in lines:
         line = line.strip()
-        if(len(line) == 0):
+        if len(line) == 0:
             # empty line
             continue
         git = line.split()
@@ -200,7 +223,7 @@ def FetchEntry(name, tags=False):
     '''
 
     param = "fetch {0}".format(name)
-    if(not tags):
+    if not tags:
         param += " --no-tags"
     else:
         param += " --tags"
@@ -213,6 +236,8 @@ def FetchEntry(name, tags=False):
 def get_cli_options():
     parser = argparse.ArgumentParser(description='Tool to provide easy method create and manage the OMNICACHE', )
     parser.add_argument(dest="cache_dir", help="path to an existing or desired OMNICACHE directory")
+    parser.add_argument("--scan", dest="scan", default=None,
+                        help="Scans the path provided for top-level folders with repos to add to the OMNICACHE")
     parser.add_argument("--new", dest="new", help="Initialize the OMNICACHE.  MUST NOT EXIST",
                         action="store_true", default=False)
     parser.add_argument("--init", dest="init", help="Initialize the OMNICACHE if it doesn't already exist",
@@ -252,7 +277,7 @@ def main():
     # arg parse
     args = get_cli_options()
 
-    if(args.debug):
+    if args.debug:
         console.setLevel(logging.DEBUG)
 
     logging.info("Log Started: " + datetime.datetime.strftime(
@@ -262,9 +287,9 @@ def main():
     logging.debug("OMNICACHE dir: {0}".format(args.cache_dir))
 
     # input config file for adding new entries
-    if(args.input_config_file is not None):
+    if args.input_config_file is not None:
         args.input_config_file = CommonFilePathHandler(args.input_config_file)
-        if(not os.path.isfile(args.input_config_file)):
+        if not os.path.isfile(args.input_config_file):
             logging.critical("Invalid -c argument given.  File ({0}) isn't valid".format(args.input_config_file))
             return -4
 
@@ -273,23 +298,23 @@ def main():
     omnicache_config = None  # config object
     omnicache_config_file = os.path.join(args.cache_dir, OMNICACHE_FILENAME)
 
-    if(args.new):
-        if(os.path.isdir(args.cache_dir)):
+    if args.new:
+        if os.path.isdir(args.cache_dir):
             logging.critical("--new argument given but OMNICACHE path already exists!")
             return -1
         InitOmnicache(args.cache_dir)
         auto_fetch = True
 
-    if(args.init):
-        if(os.path.isdir(args.cache_dir)):
-            if(os.path.isfile(omnicache_config_file)):
+    if args.init:
+        if os.path.isdir(args.cache_dir):
+            if os.path.isfile(omnicache_config_file):
                 logging.debug("OMNICACHE already exists.  No need to initialize")
         else:
             InitOmnicache(args.cache_dir)
         auto_fetch = True
 
     # Check to see if exists
-    if(not os.path.isdir(args.cache_dir)):
+    if not os.path.isdir(args.cache_dir):
         logging.critical("OMNICACHE path invalid.")
         return -2
 
@@ -314,9 +339,45 @@ def main():
         if(count > 0):
             auto_fetch = True
 
-    if(len(args.remove) > 0):
+    if len(args.remove) > 0:
         for inputdata in args.remove:
             RemoveEntry(omnicache_config, inputdata)
+
+    # if we need to scan
+    if args.scan is not None:
+        logging.critical("OMNICACHE is scanning the folder %s.")
+        if not os.path.isdir(args.scan):
+            logging.error("Invalid scan directory")
+            return -4
+        reposFound = dict()
+        # iterate through top level directories
+        dirs = os.listdir(args.scan)
+        while len(dirs) > 0:
+            item = dirs.pop()
+            itemDir = os.path.join(args.scan, item)
+            if os.path.isfile(itemDir):
+                continue
+            logging.info("Scanning %s for a git repo" % item)
+            gitDir = os.path.join(itemDir, ".git")
+            # Check if it's a directory or a file (submodules usually have a file instead of a folder)
+            if os.path.isdir(gitDir) or os.path.isfile(gitDir):
+                repo = MuGit.Repo(itemDir)
+                if repo.url:
+                    if repo.url not in reposFound:
+                        reposFound[repo.url] = item
+                    else:
+                        logging.warning("Skipping previously found repo at %s with url %s" % (item, repo.url))
+                else:  # if repo.url is none
+                    logging.error("Url not found for git repo at: %s" % itemDir)
+                # check for submodules
+                if repo.submodules:
+                    for submodule in repo.submodules:
+                        dirs.append(os.path.join(item, submodule))
+            else:
+                logging.error("Git repo not found at %s" % itemDir)
+        # go through all the URL's I found
+        for url in reposFound:
+            omnicache_config.Add(reposFound[url], url)
 
     omnicache_config.Save()
 
@@ -333,12 +394,12 @@ def main():
             if(ret != 0) and (ErrorCode == 0):
                 ErrorCode = ret
 
-    if(args.list):
+    if args.list:
         ret = ConsistencyCheckCacheConfig(omnicache_config)
-        if(ret != 0) and (ErrorCode == 0):
+        if (ret != 0) and (ErrorCode == 0):
             ErrorCode = ret
         print("List OMNICACHE content\n")
-        if(len(omnicache_config.remotes) == 0):
+        if len(omnicache_config.remotes) == 0:
             logging.warning("No Remotes to show")
 
         for remote in omnicache_config.remotes.values():

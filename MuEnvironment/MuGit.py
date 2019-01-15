@@ -81,6 +81,7 @@ class Repo(object):
                 self.remotes = self._get_remotes()
                 self.head = self._get_head()
                 self.dirty = self._get_dirty()
+                self.url = self._get_url()
                 self.bare = self._get_bare()
                 self.initalized = self._get_initalized()
                 self.submodules = self._get_submodule_list()
@@ -253,16 +254,26 @@ class Repo(object):
         return True
 
     @classmethod
-    def clone_from(self, url, to_path, progress=None, env=None, shallow=False, **kwargs):
+    def clone_from(self, url, to_path, progress=None, env=None, shallow=False, reference=None, **kwargs):
         logging.debug("Cloning {0} into {1}".format(url, to_path))
         # make sure we get the commit if
         # use run command from utilities
         cmd = "git"
+        params = ["clone", "--recurse-submodules"]
         if shallow:
-            params = "clone --depth 1 --shallow-submodules --recurse-submodules %s %s " % (
-                url, to_path)
-        else:
-            params = "clone --recurse-submodules %s %s " % (url, to_path)
-        RunCmd(cmd, params)
+            params.append("--shallow-submodules")
+        if reference:
+            params.append("--reference %s" % reference)
+        params.append(url)
+        params.append(to_path)
+
+        # Combine all the parameters together
+        param_string = " ".join(params)
+
+        ret = RunCmd(cmd, param_string)
+
+        if ret != 0:
+            logging.error("ERROR CLONING ")
+            return None
 
         return Repo(to_path)

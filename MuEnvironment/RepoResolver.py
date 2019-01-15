@@ -126,7 +126,7 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
 # dependencies is a list of objects - it has Path, Commit, Branch,
 
 
-def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_ok=False):
+def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_ok=False, omnicache_dir=None):
 
     packages = []
     if force:
@@ -134,6 +134,8 @@ def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_
     if update_ok:
         logging.info("Resolving dependencies with updates as needed")
     for dependency in dependencies:
+        if "ReferencePath" not in dependency:
+            dependency["ReferencePath"] = omnicache_dir
         git_path = os.path.join(WORKSPACE_PATH, dependency["Path"])
         packages.append(git_path)
         resolve(git_path, dependency, force, ignore, update_ok)
@@ -183,7 +185,12 @@ def clone_repo(abs_file_system_path, DepObj):
     shallow = False
     if "Commit" in DepObj:
         shallow = False
-    Repo.clone_from(DepObj["Url"], dest, shallow=shallow)
+    if "Full" in DepObj and DepObj["Full"] is True:
+        shallow = False
+    refrence = None
+    if "ReferencePath" in DepObj:
+        refrence = os.path.abspath(DepObj["ReferencePath"])
+    Repo.clone_from(DepObj["Url"], dest, shallow=shallow, reference=refrence)
 
     return dest
 
