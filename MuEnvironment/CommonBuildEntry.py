@@ -1,4 +1,4 @@
-## @file CommonBuildEntry.py
+# @file CommonBuildEntry.py
 # This module contains code that is shared between all the entry points for PlatformBUild
 # scripts.
 #
@@ -36,6 +36,7 @@ import pkg_resources
 from datetime import datetime
 from MuEnvironment.MuGit import Repo
 from MuEnvironment import SelfDescribingEnvironment
+from MuEnvironment import MuLogging
 from MuEnvironment import PluginManager
 from MuEnvironment import VersionAggregator
 from MuPythonLibrary.UtilityFunctions import RunCmd
@@ -112,7 +113,7 @@ def minimum_env_init(my_workspace_path, my_project_scope):
         raise RuntimeError(
             "Please upgrade Python! Current version is %s. Minimum is %s." % (cur_py, hard_min_py))
     if version_compare(soft_min_py, cur_py) > 0:
-        logging.critical("Please upgrade Python! Current version is %s. Recommended minimum is %s." % (
+        logging.error("Please upgrade Python! Current version is %s. Recommended minimum is %s." % (
             cur_py, soft_min_py))
 
     return_buffer = StringIO()
@@ -135,25 +136,25 @@ def minimum_env_init(my_workspace_path, my_project_scope):
 # be used by all commands. (ie. doesn't configure any logging files)
 
 
-def configure_base_logging(mode="standard"):
+def configure_base_logging(mode="standard", sections=[]):
     # Initialize logging.
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
 
     # Adjust console mode depending on mode.
-    console = logging.StreamHandler()
+    MuLogging.setup_section_level()
+
+    for section in sections:
+        MuLogging.get_mu_filter().addSection(section)
+
     if mode == "vs":
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(logging.Formatter("%(message)s"))
+        console = MuLogging.setup_console_logging(use_color=False, formatter="%(message)s", logging_level=logging.DEBUG)
     elif mode == 'verbose':
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+        console = MuLogging.setup_console_logging(logging_level=logging.DEBUG)
     elif mode == 'simple':
-        console.setLevel(logging.INFO)
-        console.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+        console = MuLogging.setup_console_logging(logging_level=logging.INFO)
     else:
-        console.setLevel(logging.CRITICAL)
-        console.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+        console = MuLogging.setup_console_logging(logging_level=logging.WARNING)
 
     # Add the console as a logger, now that it's configured.
     logger.addHandler(console)
@@ -174,19 +175,19 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
     if force_it:
         try:
             # Clean and reset the main repo.
-            logging.critical("## Cleaning the root repo...")
+            MuLogging.log_progress("## Cleaning the root repo...")
             cmd_with_output('git reset --hard', my_workspace_path)
             log_lines(logging.INFO, cmd_with_output('git clean -xffd', my_workspace_path))
-            logging.critical("Done.\n")
+            MuLogging.log_progress("Done.\n")
 
             # Clean any submodule repos.
             if my_required_repos:
                 for required_repo in my_required_repos:
-                    logging.critical("## Cleaning Git repository: %s..." % required_repo)
+                    MuLogging.log_progress("## Cleaning Git repository: %s..." % required_repo)
                     required_repo_path = os.path.normpath(os.path.join(my_workspace_path, required_repo))
                     cmd_with_output('git reset --hard', required_repo_path)
                     log_lines(logging.INFO, cmd_with_output('git clean -xffd', required_repo_path))
-                    logging.critical("Done.\n")
+                    MuLogging.log_progress("Done.\n")
 
         except RuntimeError as e:
             logging.error("FAILED!\n")
@@ -196,25 +197,25 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
 
     # Grab the remaining Git repos.
     if my_required_repos:
-        #### Git Repos: STEP 1 --------------------------------------
+        # Git Repos: STEP 1 --------------------------------------
         # Make sure that the repos are all synced.
         try:
-            logging.critical("## Syncing Git repositories: %s..." % ", ".join(my_required_repos))
+            MuLogging.log_progress("## Syncing Git repositories: %s..." % ", ".join(my_required_repos))
             cmd_with_output('git submodule sync -- ' + " ".join(my_required_repos), my_workspace_path)
-            logging.critical("Done.\n")
+            MuLogging.log_progress("Done.\n")
         except RuntimeError as e:
             logging.error("FAILED!\n")
             logging.error("Error while trying to synchronize the environment!")
             log_lines(logging.ERROR, str(e))
             return
 
-        #### Git Repos: STEP 2 --------------------------------------
+        # Git Repos: STEP 2 --------------------------------------
         # Iterate through all repos and see whether they should be fetched.
         for required_repo in my_required_repos:
             try:
-                logging.critical("## Checking Git repository: %s..." % required_repo)
+                MuLogging.log_progress("## Checking Git repository: %s..." % required_repo)
 
-                #### Git Repos: STEP 2a ---------------------------------
+                # Git Repos: STEP 2a ---------------------------------
                 # Need to determine whether to skip this repo.
                 required_repo_path = os.path.normpath(os.path.join(my_workspace_path, required_repo))
                 skip_repo = False
@@ -230,7 +231,7 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
                         logging.info("-- Skipping fetch!")
                         skip_repo = True
 
-                #### Git Repos: STEP 2b ---------------------------------
+                # Git Repos: STEP 2b ---------------------------------
                 # If we're not skipping, grab it.
                 if not skip_repo or force_it:
                     logging.info("## Fetching repo.")
@@ -241,7 +242,7 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
                     cmd_string += " " + required_repo
                     RunCmd('git', cmd_string, workingdir=my_workspace_path)
 
-                logging.critical("Done.\n")
+                MuLogging.log_progress("Done.\n")
 
             except RuntimeError as e:
                 logging.error("FAILED!\n")
@@ -251,18 +252,19 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
     # Now that we should have all of the required code,
     # we're ready to build the environment and fetch the
     # dependencies for this project.
-    logging.critical("## Fetching all external dependencies...")
+    MuLogging.log_progress("## Fetching all external dependencies...")
     (build_env, shell_env) = minimum_env_init(
         my_workspace_path, my_project_scope)
     SelfDescribingEnvironment.UpdateDependencies(
         my_workspace_path, my_project_scope)
-    logging.critical("Done.\n")
+    MuLogging.log_progress("Done.\n")
 
     # TODO: Install any certs any other things that might be required.
 
 
 def update_process(my_workspace_path, my_project_scope):
     # Get the environment set up.
+    logging.log(MuLogging.SECTION, "Bootstrapping Enviroment")
     logging.info("## Parsing environment...")
     (build_env, shell_env) = minimum_env_init(
         my_workspace_path, my_project_scope)
@@ -275,24 +277,22 @@ def update_process(my_workspace_path, my_project_scope):
     logging.info("Done.\n")
 
 
-def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
+def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logging_mode="standard"):
     #
     # Initialize file-based logging.
     #
-    logfile = os.path.join(my_workspace_path, "Build", "BUILDLOG.TXT")
-    if not os.path.isdir(os.path.dirname(logfile)):
-        os.makedirs(os.path.dirname(logfile))
+    log_directory = os.path.join(my_workspace_path, "Build")
 
-    filelogger = logging.FileHandler(filename=(logfile), mode='w')
-    filelogger.setLevel(logging.DEBUG)
-    filelogger.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
-    logging.getLogger('').addHandler(filelogger)
+    # TODO get the logging mode to determine the log level we should output at?
+    logfile, filelogger = MuLogging.setup_txt_logger(log_directory, "BUILDLOG", logging.DEBUG)
+    mdfile, mdlogger = MuLogging.setup_markdown_logger(log_directory, "BUILDLOG", logging.DEBUG)
 
     logging.info("Log Started: " + datetime.strftime(datetime.now(), "%A, %B %d, %Y %I:%M%p"))
     logging.info("Running Python version: " + str(sys.version_info))
 
     display_pip_package_info(PIP_PACKAGES_LIST)
 
+    logging.log(MuLogging.SECTION, "Collecting version information")
     repo = Repo(path=my_workspace_path)
     VersionAggregator.GetVersionAggregator().ReportVersion("Parent Repo", repo.head.commit,
                                                            VersionAggregator.VersionTypes.COMMIT)
@@ -300,7 +300,7 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     for submodule_path in repo.submodules:
         submodule = Repo(path=os.path.join(my_workspace_path, submodule_path))
         if submodule.head is None:
-            logging.critical("Uninitialized submodule detected: {0}".format(submodule_path))
+            logging.error("Uninitialized submodule detected: {0}".format(submodule_path))
         else:
             VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit,
                                                                    VersionAggregator.VersionTypes.COMMIT)
@@ -318,6 +318,7 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
             "Environment is not in a state to build! Please run '--UPDATE'.")
 
     # Load plugins
+    logging.log(MuLogging.SECTION, "Loading Plugins")
     pluginManager = PluginManager.PluginManager()
     failedPlugins = pluginManager.SetListOfEnvironmentDescriptors(
         build_env.plugins)
@@ -337,15 +338,17 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths):
     #
     # Now we can actually kick off a build.
     #
+    logging.log(MuLogging.SECTION, "Kicking off build")
     PB = PlatformBuilder(my_workspace_path, my_module_pkg_paths,
                          pluginManager, helper, sys.argv)
     retcode = PB.Go()
 
+    logging.log(MuLogging.SECTION, "Summary")
     if(retcode != 0):
-        logging.critical("Error")
-        logging.critical("Log file at " + logfile)
+        MuLogging.log_progress("Error")
+        MuLogging.log_progress("Log file at " + logfile)
     else:
-        logging.critical("Success")
+        MuLogging.log_progress("Success")
 
     # get all vars needed as we can't do any logging after shutdown otherwise our log is cleared.
     # Log viewer
@@ -393,6 +396,7 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
     parser.add_argument('--vsmode', '--VSMODE', '--VsMode', action='store_true', default=False)
     parser.add_argument('-v', '-V', '--verbose', '--VERBOSE', '--Verbose', dest='verbose',
                         action='store_true', default=False)
+    parser.add_argument("--log", "--include-log", dest="log_sections", action='append', default=[])
 
     # Operational modes.
     mode_group = parser.add_mutually_exclusive_group()
@@ -418,7 +422,7 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
         logging_mode = 'simple'
 
     # Turn on logging for the remainder of the process.
-    configure_base_logging(logging_mode)
+    configure_base_logging(logging_mode, args.log_sections)
 
     # Execute the requested process.
     if args.script_process == "setup":
@@ -429,4 +433,4 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
     else:
         if args.update_first:
             update_process(my_workspace_path, my_project_scope)
-        build_process(my_workspace_path, my_project_scope, my_module_pkg_paths)
+        build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logging_mode)

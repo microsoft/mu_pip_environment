@@ -70,6 +70,7 @@ class Repo(object):
         self.head = None  # the head commit that this repo is at
         self.submodules = None  # List of submodule paths
         self._update_from_git()
+        self._logger = logging.getLogger("git.repo")
 
     # Updates the .git file
     def _update_from_git(self):
@@ -86,8 +87,8 @@ class Repo(object):
                 self.initalized = self._get_initalized()
                 self.submodules = self._get_submodule_list()
             except Exception as e:
-                logging.error("GIT ERROR for {0}".format(self._path))
-                logging.error(e)
+                self._logger.error("GIT ERROR for {0}".format(self._path))
+                self._logger.error(e)
                 raise e
                 return False
 
@@ -191,7 +192,7 @@ class Repo(object):
         return os.path.isdir(os.path.join(self._path, ".git"))
 
     def submodule(self, command, *args):
-        logging.debug(
+        self._logger.debug(
             "Calling command on submodule {0} with {1}".format(command, args))
         return_buffer = StringIO()
         flags = " ".join(args)
@@ -202,7 +203,7 @@ class Repo(object):
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
-            logging.error(p1)
+            self._logger.error(p1)
             return False
 
         return True
@@ -217,7 +218,7 @@ class Repo(object):
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
-            logging.error(p1)
+            self._logger.error(p1)
             return False
 
         return True
@@ -232,7 +233,7 @@ class Repo(object):
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
-            logging.error(p1)
+            self._logger.error(p1)
             return False
 
         return True
@@ -248,14 +249,15 @@ class Repo(object):
 
         p1 = return_buffer.getvalue().strip()
         if ret != 0:
-            logging.debug(p1)
+            self._logger.debug(p1)
             return False
 
         return True
 
     @classmethod
     def clone_from(self, url, to_path, progress=None, env=None, shallow=False, reference=None, **kwargs):
-        logging.debug("Cloning {0} into {1}".format(url, to_path))
+        _logger = logging.getLogger("git.repo")
+        _logger.debug("Cloning {0} into {1}".format(url, to_path))
         # make sure we get the commit if
         # use run command from utilities
         cmd = "git"

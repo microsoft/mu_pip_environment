@@ -35,6 +35,7 @@ class VersionAggregator(object):
     def __init__(self):
         super(VersionAggregator, self).__init__()
         self.Versions = {}
+        self._logger = logging.getLogger("VersionAggregator")
 
     def ReportVersion(self, key, value, versionType):
         """
@@ -46,12 +47,12 @@ class VersionAggregator(object):
         """
         if key in self.Versions:
             if self.Versions[key]["version"] == value:
-                logging.warning("VersionAggregator: This {0}:{1} key/value pair "
-                                "was already registered".format(key, value))
+                self._logger.warning("VersionAggregator: This {0}:{1} key/value pair "
+                                     "was already registered".format(key, value))
             else:
                 error = "VersionAggregator: {0} key registered with a different value\n\t" \
                         "Old:{1}\n\tNew:{2}".format(key, self.Versions[key]["version"], value)
-                logging.error(error)
+                self._logger.error(error)
                 raise Exception(error)
             return
 
@@ -60,7 +61,7 @@ class VersionAggregator(object):
             "version": value,
             "type": versionType.name
         }
-        logging.debug("VersionAggregator logging version: {0}".format(str(self.Versions[key])))
+        self._logger.debug("VersionAggregator logging version: {0}".format(str(self.Versions[key])))
 
     def GetAggregatedVersionInformation(self):
         """

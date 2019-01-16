@@ -37,7 +37,8 @@ import stat
 
 # checks out dependency at git_path
 def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=False):
-    logging.info("Checking for dependency {0}".format(dependency["Path"]))
+    logger = logging.getLogger("git")
+    logger.info("Checking for dependency {0}".format(dependency["Path"]))
     git_path = os.path.abspath(file_system_path)
 
     # check if we have a path in our dependency
@@ -63,19 +64,19 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
     if not repo.initalized:  # if there isn't a .git folder in there
         if force:
             clear_folder(git_path)
-            logging.warning(
+            logger.warning(
                 "Folder {0} is not a git repo and is being overwritten!".format(git_path))
             clone_repo(git_path, dependency)
             checkout(git_path, dependency, Repo(git_path), True, False)
             return
         else:
             if(ignore):
-                logging.warning(
+                logger.warning(
                     "Folder {0} is not a git repo but Force parameter not used.  "
                     "Ignore State Allowed.".format(git_path))
                 return
             else:
-                logging.critical(
+                logger.critical(
                     "Folder {0} is not a git repo and it is not empty.".format(git_path))
                 raise Exception(
                     "Folder {0} is not a git repo and it is not empty".format(git_path))
@@ -83,19 +84,19 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
     if repo.dirty:
         if force:
             clear_folder(git_path)
-            logging.warning(
+            logger.warning(
                 "Folder {0} is a git repo but is dirty and is being overwritten as requested!".format(git_path))
             clone_repo(git_path, dependency)
             checkout(git_path, dependency, Repo(git_path), True, False)
             return
         else:
             if(ignore):
-                logging.warning(
+                logger.warning(
                     "Folder {0} is a git repo but is dirty and Force parameter not used.  "
                     "Ignore State Allowed.".format(git_path))
                 return
             else:
-                logging.critical(
+                logger.critical(
                     "Folder {0} is a git repo and is dirty.".format(git_path))
                 raise Exception(
                     "Folder {0} is a git repo and is dirty.".format(git_path))
@@ -103,19 +104,19 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
     if repo.remotes.origin.url != dependency["Url"]:
         if force:
             clear_folder(git_path)
-            logging.warning(
+            logger.warning(
                 "Folder {0} is a git repo but it is at a different repo and is "
                 "being overwritten as requested!".format(git_path))
             clone_repo(git_path, dependency)
             checkout(git_path, dependency, Repo(git_path), True, False)
         else:
             if ignore:
-                logging.warning(
+                logger.warning(
                     "Folder {0} is a git repo pointed at a different remote.  "
                     "Can't checkout or sync state".format(git_path))
                 return
             else:
-                logging.critical("The URL of the git Repo {2} in the folder {0} does not match {1}".format(
+                logger.critical("The URL of the git Repo {2} in the folder {0} does not match {1}".format(
                     git_path, dependency["Url"], repo.remotes.origin.url))
                 raise Exception("The URL of the git Repo {2} in the folder {0} does not match {1}".format(
                     git_path, dependency["Url"], repo.remotes.origin.url))
@@ -127,12 +128,12 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
 
 
 def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_ok=False, omnicache_dir=None):
-
+    logger = logging.getLogger("git")
     packages = []
     if force:
-        logging.info("Resolving dependencies by force")
+        logger.info("Resolving dependencies by force")
     if update_ok:
-        logging.info("Resolving dependencies with updates as needed")
+        logger.info("Resolving dependencies with updates as needed")
     for dependency in dependencies:
         if "ReferencePath" not in dependency:
             dependency["ReferencePath"] = omnicache_dir
@@ -145,7 +146,7 @@ def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_
         git_path = os.path.join(WORKSPACE_PATH, dependency["Path"])
         GitDetails = get_details(git_path)
         # print out details
-        logging.info("{3} = Git Details: Url: {0} Branch {1} Commit {2}".format(
+        logger.info("{3} = Git Details: Url: {0} Branch {1} Commit {2}".format(
             GitDetails["Url"], GitDetails["Branch"], GitDetails["Commit"], dependency["Path"]))
 
     return packages
@@ -162,7 +163,8 @@ def get_details(abs_file_system_path):
 
 
 def clear_folder(abs_file_system_path):
-    logging.warning("WARNING: Deleting contents of folder {0} to make way for Git repo".format(
+    logger = logging.getLogger("git")
+    logger.warning("WARNING: Deleting contents of folder {0} to make way for Git repo".format(
         abs_file_system_path))
 
     def dorw(action, name, exc):
@@ -178,7 +180,8 @@ def clear_folder(abs_file_system_path):
 
 
 def clone_repo(abs_file_system_path, DepObj):
-    logging.critical("Cloning repo: {0}".format(DepObj["Url"]))
+    logger = logging.getLogger("git")
+    logger.critical("Cloning repo: {0}".format(DepObj["Url"]))
     dest = abs_file_system_path
     if not os.path.isdir(dest):
         os.makedirs(dest, exist_ok=True)
@@ -196,7 +199,7 @@ def clone_repo(abs_file_system_path, DepObj):
 
 
 def checkout(abs_file_system_path, dep, repo, update_ok=False, ignore_dep_state_mismatch=False, force=False):
-
+    logger = logging.getLogger("git")
     if "Commit" in dep:
         if update_ok or force:
             repo.fetch()
@@ -204,15 +207,15 @@ def checkout(abs_file_system_path, dep, repo, update_ok=False, ignore_dep_state_
             repo.submodule("update", "--init", "--recursive")
         else:
             if repo.head.commit == dep["Commit"]:
-                logging.debug(
+                logger.debug(
                     "Dependency {0} state ok without update".format(dep["Path"]))
                 return
             elif ignore_dep_state_mismatch:
-                logging.warning(
+                logger.warning(
                     "Dependency {0} is not in sync with requested commit.  Ignore state allowed".format(dep["Path"]))
                 return
             else:
-                logging.critical(
+                logger.critical(
                     "Dependency {0} is not in sync with requested commit.  Fail.".format(dep["Path"]))
                 raise Exception(
                     "Dependency {0} is not in sync with requested commit.  Fail.".format(dep["Path"]))
@@ -224,17 +227,17 @@ def checkout(abs_file_system_path, dep, repo, update_ok=False, ignore_dep_state_
             repo.submodule("update", "--init", "--recursive")
         else:
             if repo.active_branch == dep["Branch"]:
-                logging.debug(
+                logger.debug(
                     "Dependency {0} state ok without update".format(dep["Path"]))
                 return
             elif ignore_dep_state_mismatch:
-                logging.warning(
+                logger.warning(
                     "Dependency {0} is not in sync with requested branch.  Ignore state allowed".format(dep["Path"]))
                 return
             else:
                 error = "Dependency {0} is not in sync with requested branch. Expected: {1}. Got {2} Fail.".format(
                     dep["Path"], dep["Branch"], repo.active_branch)
-                logging.critical(error)
+                logger.critical(error)
                 raise Exception(error)
     else:
         raise Exception(

@@ -39,7 +39,7 @@ from MuEnvironment import ShellEnvironment
 from MuPythonLibrary.Uefi.EdkII.Parsers.TargetTxtParser import TargetTxtParser
 from MuPythonLibrary.Uefi.EdkII.Parsers.DscParser import DscParser
 from MuPythonLibrary.UtilityFunctions import RunCmd
-
+from MuEnvironment import MuLogging
 from MuEnvironment import PluginManager
 
 
@@ -87,7 +87,7 @@ class UefiBuilder(object):
 
             # clean
             if(self.Clean):
-                logging.critical("Cleaning")
+                MuLogging.log_progress("Cleaning")
                 ret = self.CleanTree()
                 if(ret != 0):
                     logging.critical("Clean failed")
@@ -95,7 +95,7 @@ class UefiBuilder(object):
 
             # prebuild
             if(self.SkipPreBuild):
-                logging.critical("Skipping Pre Build")
+                MuLogging.log_progress("Skipping Pre Build")
             else:
                 ret = self.PreBuild()
                 if(ret != 0):
@@ -105,7 +105,7 @@ class UefiBuilder(object):
             # Output Build Environment to File - this is mostly for debug of build
             # issues or adding other build features using existing variables
             if(self.OutputBuildEnvBeforeBuildToFile is not None):
-                logging.critical("Writing Build Env Info out to File")
+                MuLogging.log_progress("Writing Build Env Info out to File")
                 logging.debug("Found an Output Build Env File: " + self.OutputBuildEnvBeforeBuildToFile)
                 self.env.PrintAll(self.OutputBuildEnvBeforeBuildToFile)
 
@@ -120,7 +120,7 @@ class UefiBuilder(object):
 
             # build
             if(self.SkipBuild):
-                logging.critical("Skipping Build")
+                MuLogging.log_progress("Skipping Build")
             else:
                 ret = self.Build()
 
@@ -130,7 +130,7 @@ class UefiBuilder(object):
 
             # postbuild
             if(self.SkipPostBuild):
-                logging.critical("Skipping Post Build")
+                MuLogging.log_progress("Skipping Post Build")
             else:
                 ret = self.PostBuild()
                 if(ret != 0):
@@ -139,7 +139,7 @@ class UefiBuilder(object):
 
             # flash
             if(self.FlashImage):
-                logging.critical("Flashing Image")
+                MuLogging.log_progress("Flashing Image")
                 ret = self.FlashRomImage()
                 if(ret != 0):
                     logging.critical("Flash Image failed")
@@ -147,7 +147,7 @@ class UefiBuilder(object):
 
         except:
             logging.critical("Build Process Exception")
-            logging.debug(traceback.format_exc())
+            logging.error(traceback.format_exc())
             return -1
 
         return 0
@@ -155,7 +155,7 @@ class UefiBuilder(object):
     def CleanTree(self, RemoveConfTemplateFilesToo=False):
         ret = 0
         # loop thru each build target set.
-        logging.critical("Cleaning All Output for Build")
+        MuLogging.log_progress("Cleaning All Output for Build")
 
         d = self.env.GetValue("BUILD_OUTPUT_BASE")
         if(os.path.isdir(d)):
@@ -191,7 +191,7 @@ class UefiBuilder(object):
 
     def Build(self):
         BuildType = self.env.GetValue("TARGET")
-        logging.critical("Running Build %s" % BuildType)
+        MuLogging.log_progress("Running Build %s" % BuildType)
 
         # set target, arch toolchain
         params = "-p " + self.env.GetValue("ACTIVE_PLATFORM")
@@ -214,7 +214,7 @@ class UefiBuilder(object):
         mod = self.env.GetValue("BUILDMODULE")
         if(mod is not None and len(mod.strip()) > 0):
             params += " -m " + mod
-            logging.critical("Single Module Build: " + mod)
+            MuLogging.log_progress("Single Module Build: " + mod)
             self.SkipPostBuild = True
             self.FlashImage = False
 
@@ -222,14 +222,22 @@ class UefiBuilder(object):
         buildvars = self.env.GetAllBuildKeyValues(BuildType)
         for key, value in buildvars.items():
             params += " -D " + key + "=" + value
+        output_stream = MuLogging.create_output_stream()
         ret = RunCmd("build", params)
+        errors, warnings = MuLogging.scan_compiler_output(output_stream)
+        MuLogging.remove_output_stream(output_stream)
+        for warning in warnings:
+            logging.warning(warning)
+        for error in errors:
+            logging.error(error)
+
         if(ret != 0):
             return ret
 
         return 0
 
     def PreBuild(self):
-        logging.critical("Running Pre Build")
+        MuLogging.log_progress("Running Pre Build")
         #
         # Run the plaform pre-build steps.
         #
@@ -259,7 +267,7 @@ class UefiBuilder(object):
         return ret
 
     def PostBuild(self):
-        logging.critical("Running Post Build")
+        MuLogging.log_progress("Running Post Build")
         #
         # Run the platform post-build steps.
         #
@@ -291,7 +299,7 @@ class UefiBuilder(object):
         return ret
 
     def SetEnv(self):
-        logging.critical("Setting up the Environment")
+        MuLogging.log_progress("Setting up the Environment")
         ShellEnvironment.GetEnvironment().set_shell_var("WORKSPACE", self.ws)
         ShellEnvironment.GetBuildVars().SetValue("WORKSPACE", self.ws, "Set in SetEnv")
 
@@ -525,7 +533,7 @@ class UefiBuilder(object):
     # Show the help
     #
     def ShowHelp(self):
-        logging.critical("Showing help")
+        MuLogging.log_progress("Showing help")
         print("------------------------------------------")
         print("  UefiBuild Help")
         print("------------------------------------------")

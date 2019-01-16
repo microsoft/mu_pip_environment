@@ -27,114 +27,251 @@
 # POSSIBILITY OF SUCH DAMAGE.
 ##
 import logging
-import sys
-from datetime import datetime
 import os
 import shutil
-from MuPythonLibrary import MuAnsiHandler
-from MuPythonLibrary import MuMarkdownHandler
-from MuPythonLibrary import MuStringHandler
+import re
+
+try:
+    from MuPythonLibrary import MuAnsiHandler
+except ImportError:
+    MuAnsiHandler = None
+try:
+    from MuPythonLibrary import MuMarkdownHandler
+except ImportError:
+    MuMarkdownHandler = None
+try:
+    from MuPythonLibrary import MuStringHandler
+except ImportError:
+    MuStringHandler = None
+try:
+    from MuPythonLibrary import MuFileHandler
+except ImportError:
+    MuFileHandler = logging
 
 
-SECTION = logging.CRITICAL + 1  # just above critical
+# These three are for emitting different events
+# section is for marking different sections of the build process
+# subsection is similar to sub section but denotes a subsection of the current section
+# both of the section levels are high enough that they won't get filtered out
+# progress is for marking things like a process completed. Similar to critical but doesn't mean the process is exiting
+# progress is below critical so it can be turned off but still high enough that it doesn't get filtered out
+SECTION = logging.CRITICAL + 2  # just above critical
+SUB_SECTION = logging.CRITICAL + 1  # just above critical
+PROGRESS = logging.CRITICAL - 1  # just below critical
 
 
-def clean_build_logs(ws):
+# sub_directory is relative to ws argument
+def clean_build_logs(ws, sub_directory=None):
     # Make sure that we have a clean environment.
-    if os.path.isdir(os.path.join(ws, "Build", "BuildLogs")):
-        shutil.rmtree(os.path.join(ws, "Build", "BuildLogs"))
+    if sub_directory is None:
+        sub_directory = os.path.join("Build", "BuildLogs")
+    if os.path.isdir(os.path.join(ws, sub_directory)):
+        shutil.rmtree(os.path.join(ws, sub_directory))
 
 
 def get_section_level():
     return SECTION
 
 
-# called to setup Buildlog_master as well as buildlogs for the individual packages
-def setup_logging(workspace, filename=None,
-                  loghandle=None,
-                  use_color=True,
-                  use_azure_colors=False):
+def get_subsection_level():
+    return SUB_SECTION
 
-    if loghandle is not None:
-        stop_logging(loghandle)
 
-    logging_level = logging.INFO
+def get_progress_level():
+    return PROGRESS
 
-    if filename is None:
-        filename = "BUILDLOG_MASTER.txt"
 
-    # setup logger
-    logger = logging.getLogger('')
-    logger.setLevel(logging.NOTSET)  # we capture everything
-    default_formatter = logging.Formatter(
-        "%(levelname)s - %(message)s")
+def get_mu_filter(verbose=False):
+    # gMuFilter = MuLogFilter.instance()
+    gMuFilter = MuLogFilter()
+    if verbose:
+        gMuFilter.setVerbose(verbose)
+    return gMuFilter
 
+
+def log_progress(message):
+    logging.log(get_progress_level(), message)
+
+
+def setup_section_level():
     # todo define section level
     # add section as a level to the logger
     section_level = get_section_level()
+    subsection_level = get_subsection_level()
+    progress_level = get_progress_level()
     if logging.getLevelName(section_level) is not "SECTION":
         logging.addLevelName(section_level, "SECTION")
+    if logging.getLevelName(subsection_level) is not "SUBSECTION":
+        logging.addLevelName(subsection_level, "SUBSECTION")
+    if logging.getLevelName(progress_level) is not "PROGRESS":
+        logging.addLevelName(progress_level, "PROGRESS")
 
-    if len(logger.handlers) == 0:
-        # Create the main console as logger
-        handler = setup_console_logging(use_azure_colors, use_color, level=logging.INFO)
-        logger.addHandler(handler)
 
-    logfile = os.path.join(workspace, "Build", "BuildLogs", filename)
-    if(not os.path.isdir(os.path.dirname(logfile))):
-        os.makedirs(os.path.dirname(logfile))
+# creates the the plaintext logger
+def setup_txt_logger(directory, filename="log", logging_level=logging.INFO,
+                     formatter=None, logging_namespace='', isVerbose=False):
+    logger = logging.getLogger(logging_namespace)
+    log_formatter = formatter
+    if log_formatter is None:
+        log_formatter = logging.Formatter("%(name)s: %(levelname)s - %(message)s")
+
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
 
     # Create file logger
-    filelogger = logging.FileHandler(filename=(logfile), mode='w')
+    logfile_path = os.path.join(directory, filename + ".txt")
+    filelogger = MuFileHandler.FileHandler(filename=(logfile_path), mode='w+')
     filelogger.setLevel(logging_level)
-    filelogger.setFormatter(default_formatter)
+    filelogger.setFormatter(log_formatter)
     logger.addHandler(filelogger)
 
+    filelogger.addFilter(get_mu_filter(isVerbose))
+
+    return logfile_path, filelogger
+
+
+# creates the markdown logger
+def setup_markdown_logger(directory, filename="log", logging_level=logging.INFO,
+                          formatter=None, logging_namespace='', isVerbose=False):
+
+    logger = logging.getLogger(logging_namespace)
+    log_formatter = formatter
+    if log_formatter is None:
+        log_formatter = logging.Formatter("%(levelname)s - %(message)s")
+
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+
     # add markdown handler
-    markdown_filename = os.path.splitext(filename)[0] + ".md"
-    markdown_path = os.path.join(
-        workspace, "Build", "BuildLogs", markdown_filename)
-    markdownHandler = MuMarkdownHandler.MarkdownFileHandler(markdown_path)
-    markdownHandler.setFormatter(default_formatter)
+    markdown_filename = filename + ".md"
+    markdown_path = os.path.join(directory, markdown_filename)
+    if MuMarkdownHandler:
+        markdownHandler = MuMarkdownHandler.MarkdownFileHandler(markdown_path, mode="w+")
+    else:
+        markdownHandler = logging.FileHandler(markdown_path, mode="w+")
+    markdownHandler.setFormatter(log_formatter)
+
+    if logging_level <= logging.DEBUG:
+        logging_level = logging.INFO  # we don't show debugging output in markdown since it gets too full
+
+    markdownHandler.addFilter(get_mu_filter(isVerbose))
+
     markdownHandler.setLevel(logging_level)
     logger.addHandler(markdownHandler)
 
-    logging.info("Log Started: " + datetime.strftime(datetime.now(), "%A, %B %d, %Y %I:%M%p"))
-    logging.info("Running Python version: " + str(sys.version_info))
-
-    return logfile, filelogger
+    return markdown_path, markdownHandler
 
 
 # sets up a colored console logger
-def setup_console_logging(use_azure_colors, use_color=True, level=logging.INFO,
-                          formatter_msg="%(levelname)s - %(message)s"):
-    if use_azure_colors or use_color:
+def setup_console_logging(logging_level=logging.INFO, formatter=None, logging_namespace='',
+                          isVerbose=False, use_azure_colors=False, use_color=True):
+
+    formatter_msg = formatter
+    if formatter_msg is None:
+        formatter_msg = "%(name)s: %(levelname)s - %(message)s"
+
+    if use_azure_colors or use_color and MuAnsiHandler:
         formatter = MuAnsiHandler.ColoredFormatter(formatter_msg, use_azure=use_azure_colors)
         console = MuAnsiHandler.ColoredStreamHandler()
     else:
         formatter = logging.Formatter(formatter_msg)
         console = logging.StreamHandler()
 
-    console.setLevel(level)
+    console.setLevel(logging_level)
+    console.addFilter(get_mu_filter(isVerbose))
     console.setFormatter(formatter)
+
+    logger = logging.getLogger(logging_namespace)
+    logger.addHandler(console)
 
     return console
 
 
-def stop_logging(loghandle):
-    loghandle.close()
-    logging.getLogger('').removeHandler(loghandle)
+def stop_logging(loghandle, logging_namespace=''):
+    logger = logging.getLogger(logging_namespace)
+    if loghandle is None:
+        return
+    if isinstance(loghandle, list):
+        # if it's an array, process each element as a handle
+        for handle in loghandle:
+            handle.close()
+            logger.removeHandler(handle)
+    else:
+        loghandle.close()
+        logger.removeHandler(loghandle)
 
 
-def create_output_stream(level=logging.INFO):
+def create_output_stream(level=logging.INFO, logging_namespace=''):
     # creates an output stream that is in memory
-    handler = MuStringHandler.StringStreamHandler()
-    logger = logging.getLogger('')
+    if MuStringHandler:
+        handler = MuStringHandler.StringStreamHandler()
+    else:
+        handler = logging.StreamHandler()
+    logger = logging.getLogger(logging_namespace)
     handler.setLevel(level)
     logger.addHandler(handler)
     return handler
 
 
-def remove_output_stream(handler):
-    logger = logging.getLogger('')
-    logger.removeHandler(handler)
+def remove_output_stream(handler, logging_namespace=''):
+    logger = logging.getLogger(logging_namespace)
+    if isinstance(handler, list):
+        for single_handler in handler:
+            logger.removeHandler(single_handler)
+    else:
+        logger.removeHandler(handler)
+
+# TODO: how to merge this into mu_build since this is copy and pasted
+
+
+def scan_compiler_output(output_stream):
+    # seek to the start of the output stream
+    errors = []
+    warnings = []
+    output_stream.seek(0, 0)
+    error_exp = re.compile(r"error C(\d+):")
+    edk2_error_exp = re.compile(r"error F(\d+):")
+    buildpy_error_exp = re.compile(r"error (\d+)E:")
+    linker_error_exp = re.compile(r"error LNK(\d+):")
+    warning_exp = re.compile(r"warning C(\d+):")
+    for line in output_stream.readlines():
+        match = error_exp.search(line)
+        if match is not None:
+            errors.append("Compile: Error: {0}".format(line))
+        match = warning_exp.search(line)
+        if match is not None:
+            warnings.append("Compile: Warning: {0}".format(line))
+        match = linker_error_exp.search(line)
+        if match is not None:
+            errors.append("Linker: Error: {0}".format(line))
+        match = edk2_error_exp.search(line)
+        if match is not None:
+            errors.append("EDK2: Error: {0}".format(line))
+        match = buildpy_error_exp.search(line)
+        if match is not None:
+            errors.append("Build.py: Error: {0}".format(line))
+    return errors, warnings
+
+
+class MuLogFilter(logging.Filter):
+    _allowedLoggers = ["root"]
+
+    def __init__(self):
+        logging.Filter.__init__(self)
+        self._verbose = False
+        self._currentSection = "root"
+
+    def setVerbose(self, isVerbose=True):
+        self._verbose = isVerbose
+
+    def addSection(self, section):
+        # TODO request the global singleton?
+        # how to make this class static
+        MuLogFilter._allowedLoggers.append(section)
+
+    def filter(self, record):
+        # check to make sure we haven't already filtered this record
+        if record.name not in MuLogFilter._allowedLoggers and record.levelno < logging.CRITICAL and not self._verbose:
+            return False
+
+        return True
