@@ -46,7 +46,7 @@ setuptools.setup(
     },
     install_requires=[
         'pyyaml',
-        'mu_python_library>=0.3.0'
+        'mu_python_library>=0.4.1'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
