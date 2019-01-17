@@ -50,6 +50,8 @@ class PluginManager(object):
     #
     def SetListOfEnvironmentDescriptors(self, newlist):
         failed = []
+        if newlist is None:
+            return []
         for a in newlist:
             b = PluginDescriptor(a)
             if(self._load(b) == 0):
