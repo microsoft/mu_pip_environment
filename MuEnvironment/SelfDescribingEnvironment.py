@@ -261,6 +261,8 @@ def BootstrapEnvironment(workspace, scopes=()):
         build_env.update_extdep_paths(shell_env)
 
         # Bind our current execution environment into the shell vars.
+        shell_env.set_shell_var("PYTHON_HOME", os.path.dirname(sys.executable))
+        # Support legacy variable for older releases.
         shell_env.set_shell_var("PYTHON3", sys.executable)
 
         # Debug the environment that was produced.
