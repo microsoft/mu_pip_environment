@@ -30,6 +30,7 @@ import logging
 from MuEnvironment.MuGit import Repo
 import shutil
 import stat
+from MuEnvironment import MuLogging
 
 # this follows a documented flow chart
 # TODO: include link to flowchart?
@@ -137,6 +138,8 @@ def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_
     for dependency in dependencies:
         if "ReferencePath" not in dependency and omnicache_dir:
             dependency["ReferencePath"] = omnicache_dir
+        if "ReferencePath" in dependency:  # make sure that the omnicache dir is relative to the working directory
+            dependency["ReferencePath"] = os.path.join(WORKSPACE_PATH, dependencies["ReferencePath"])
         git_path = os.path.join(WORKSPACE_PATH, dependency["Path"])
         packages.append(git_path)
         resolve(git_path, dependency, force, ignore, update_ok)
@@ -181,7 +184,7 @@ def clear_folder(abs_file_system_path):
 
 def clone_repo(abs_file_system_path, DepObj):
     logger = logging.getLogger("git")
-    logger.critical("Cloning repo: {0}".format(DepObj["Url"]))
+    logger.log(MuLogging.get_progress_level(), "Cloning repo: {0}".format(DepObj["Url"]))
     dest = abs_file_system_path
     if not os.path.isdir(dest):
         os.makedirs(dest, exist_ok=True)
@@ -193,7 +196,15 @@ def clone_repo(abs_file_system_path, DepObj):
     reference = None
     if "ReferencePath" in DepObj and os.path.exists(DepObj["ReferencePath"]):
         reference = os.path.abspath(DepObj["ReferencePath"])
-    Repo.clone_from(DepObj["Url"], dest, shallow=shallow, reference=reference)
+    result = Repo.clone_from(DepObj["Url"], dest, shallow=shallow, reference=reference)
+
+    if result is None:
+        if "ReferencePath" in DepObj:
+            # attempt a retry without the reference
+            logger.warning("Reattempting to clone without a reference. {0}".format(DepObj["Url"]))
+            result = Repo.clone_from(DepObj["Url"], dest, shallow=shallow)
+            if result is None:
+                return None
 
     return dest
 
