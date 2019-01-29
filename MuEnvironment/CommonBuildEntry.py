@@ -346,9 +346,10 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logg
     logging.log(MuLogging.SECTION, "Summary")
     if(retcode != 0):
         MuLogging.log_progress("Error")
-        MuLogging.log_progress("Log file at " + logfile)
     else:
         MuLogging.log_progress("Success")
+    # always output the location of the log file
+    MuLogging.log_progress("Log file at " + logfile)
 
     # get all vars needed as we can't do any logging after shutdown otherwise our log is cleared.
     # Log viewer
