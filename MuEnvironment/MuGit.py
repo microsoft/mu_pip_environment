@@ -261,11 +261,13 @@ class Repo(object):
         # make sure we get the commit if
         # use run command from utilities
         cmd = "git"
-        params = ["clone", "--recurse-submodules"]
+        params = ["clone"]
         if shallow:
             params.append("--shallow-submodules")
         if reference:
             params.append("--reference %s" % reference)
+        else:
+            params.append("--recurse-submodules")  # if we don't have a reference we can just recurse the submodules
         params.append(url)
         params.append(to_path)
 
@@ -277,5 +279,12 @@ class Repo(object):
         if ret != 0:
             logging.error("ERROR CLONING ")
             return None
+
+        # if we have a reference path we must init the submodules
+        if reference:
+            params = ["submodule", "init", "--recursive"]
+            params.append("--reference %s" % reference)
+            param_string = " ".join(params)
+            ret = RunCmd(cmd, param_string)
 
         return Repo(to_path)
