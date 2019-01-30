@@ -19,6 +19,17 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.5-dev
+-----
+
+Main changes:
+
+- N/A
+
+Bug fixes:
+
+- You can't have a reference path when doing a clone and saying --recurse-submodules. While it makes zero sense, git throws an error. The retry should be catching this once it goes through as it will try to reclone without the reference path. This does it correctly the first time.
+
 0.3.4
 -----
 
