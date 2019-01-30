@@ -168,7 +168,7 @@ def configure_base_logging(mode="standard", sections=[]):
 def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_it=False, cache_path=None):
     def log_lines(level, lines):
         for line in lines.split("\n"):
-            if line is not "":
+            if line != "":
                 logging.log(level, line)
 
     # Pre-setup cleaning if "--force" is specified.
@@ -226,7 +226,7 @@ def setup_process(my_workspace_path, my_project_scope, my_required_repos, force_
 
                     # If anything was returned, we should skip processing the repo.
                     # It is either on a different commit or it has local changes.
-                    if git_data is not "":
+                    if git_data != "":
                         logging.info("-- NOTE: Repo currently exists and appears to have local changes!")
                         logging.info("-- Skipping fetch!")
                         skip_repo = True

@@ -99,11 +99,11 @@ def setup_section_level():
     section_level = get_section_level()
     subsection_level = get_subsection_level()
     progress_level = get_progress_level()
-    if logging.getLevelName(section_level) is not "SECTION":
+    if logging.getLevelName(section_level) != "SECTION":
         logging.addLevelName(section_level, "SECTION")
-    if logging.getLevelName(subsection_level) is not "SUBSECTION":
+    if logging.getLevelName(subsection_level) != "SUBSECTION":
         logging.addLevelName(subsection_level, "SUBSECTION")
-    if logging.getLevelName(progress_level) is not "PROGRESS":
+    if logging.getLevelName(progress_level) != "PROGRESS":
         logging.addLevelName(progress_level, "PROGRESS")
 
 
