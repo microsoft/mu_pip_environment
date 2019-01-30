@@ -19,16 +19,29 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.4
+-----
+
+Main changes:
+
+- N/A
+
+Bug fixes:
+
+- Fix for incorrectly using the omnicache even when it wasn't specified. This would cause problems in a server or shallow cloned environment
+
 0.3.3
 -----
 
 Main changes:
+
 - Omnicache is a single cache database as a --reference for git repo initialization. See feature_omnicache.md for more information.
 - Based on TOOL_CHAIN_TAG, ConfMgmt will attempt to locate a .vs or .gcc conf file before loading the .ms conf file.
 - In ConfMgmt __init__, we will now throw an error if WORKSPACE or EDK2_BASE_TOOLS_DIR is not populated yet.
 - Significant restructure of MuLogging API surface. Now using named loggers rather than root logger so pieces can be filtered using MuFilter. More info in feature_MuLogging.md.
 
 Bug fixes:
+
 - Linted code base, enforcing a 120 character per line limit.
 - Added /.eggs to .gitignore. This directory is only generated when using a local installation of a pip module.
 
