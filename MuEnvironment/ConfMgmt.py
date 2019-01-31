@@ -45,7 +45,7 @@ class ConfMgmt():
         self.env = ShellEnvironment.GetBuildVars()
         if (self.env.GetValue("WORKSPACE") is None) or \
                 (self.env.GetValue("EDK2_BASE_TOOLS_DIR") is None):
-            raise Exception("TOOL_CHAIN_TAG and EDK2_BASE_TOOLS_DIR must be set prior to running ConfMgmt")
+            raise Exception("WORKSPACE and EDK2_BASE_TOOLS_DIR must be set prior to running ConfMgmt")
         self.__PopulateConf(OverrideConf, AdditionalTemplateConfDir)
 
     #
