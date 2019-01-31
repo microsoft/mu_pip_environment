@@ -195,17 +195,19 @@ class ConfMgmt():
 
     #
     # Use VsWhere tool to find visual studio tools
-    #
     # return tuple of (error code, string value)
     #
-    def FindWithVsWhere(self, products=None):
+    # Make static method so this can be used without
+    # full Edk2/Mu Build Environment
+    #
+    @staticmethod
+    def FindWithVsWhere(products=None):
         cmd = "-latest -nologo -all -property installationPath"
         if(products is not None):
             cmd += " -products " + products
         a = StringIO()
         ret = RunCmd("VsWhere", cmd, outstream=a)
         if(ret != 0):
-            self.Logger.error("Failed in VsWhere %d to get install dir" % ret)
             a.close()
             return (ret, None)
         p1 = a.getvalue().strip()
@@ -222,12 +224,14 @@ class ConfMgmt():
             p1 = None
             self.Logger.debug("Must find latest VS toolchain")
             for p in [None, "Microsoft.VisualStudio.Product.BuildTools", "*"]:
-                (rc, path) = self.FindWithVsWhere(p)
+                (rc, path) = ConfMgmt.FindWithVsWhere(p)
                 if rc == 0 and path is not None:
                     self.Logger.debug(
                         "Found VS instance using products = %s", p)
                     p1 = path
                     break
+                elif(rc != 0):
+                    self.Logger.error("Failed in VsWhere %d to get install dir" % rc)
             if(p1 is None):
                 self.Logger.critical("Failed to find valid VSLatest instance")
                 return -6
@@ -246,6 +250,8 @@ class ConfMgmt():
         else:
             self.Logger.debug("Tool Chain Tag not set or not vs latest")
 
+        #
+        # If environment specified VS15TOOLVER directly or was set above log the version
         if "VS150TOOLVER" in os.environ:
             VersionAggregator.GetVersionAggregator().ReportVersion("VS Tools", os.environ["VS150TOOLVER"],
                                                                    VersionAggregator.VersionTypes.TOOL)

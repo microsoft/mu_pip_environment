@@ -24,7 +24,7 @@ Version History
 
 Main changes:
 
-- N/A
+- In ConfMgmt, change FindWithVsWhere() to a static method.
 
 Bug fixes:
 
