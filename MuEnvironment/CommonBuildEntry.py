@@ -34,7 +34,6 @@ import subprocess
 import argparse
 import pkg_resources
 from datetime import datetime
-from MuEnvironment.MuGit import Repo
 from MuEnvironment import SelfDescribingEnvironment
 from MuEnvironment import MuLogging
 from MuEnvironment import PluginManager
@@ -291,19 +290,6 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logg
     logging.info("Running Python version: " + str(sys.version_info))
 
     display_pip_package_info(PIP_PACKAGES_LIST)
-
-    logging.log(MuLogging.SECTION, "Collecting version information")
-    repo = Repo(path=my_workspace_path)
-    VersionAggregator.GetVersionAggregator().ReportVersion("Parent Repo", repo.head.commit,
-                                                           VersionAggregator.VersionTypes.COMMIT)
-
-    for submodule_path in repo.submodules:
-        submodule = Repo(path=os.path.join(my_workspace_path, submodule_path))
-        if submodule.head is None:
-            logging.error("Uninitialized submodule detected: {0}".format(submodule_path))
-        else:
-            VersionAggregator.GetVersionAggregator().ReportVersion(submodule_path, submodule.head.commit,
-                                                                   VersionAggregator.VersionTypes.COMMIT)
 
     #
     # Next, get the environment set up.

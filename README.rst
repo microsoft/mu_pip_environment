@@ -28,6 +28,7 @@ Main changes:
 
 Bug fixes:
 
+- Removing Git submodule VersionAggregation, as this information is contained in the Git commit history. Removing this step cuts several seconds from the beginning of the build.
 - You can't have a reference path when doing a clone and saying --recurse-submodules. While it makes zero sense, git throws an error. The retry should be catching this once it goes through as it will try to reclone without the reference path. This does it correctly the first time.
 
 0.3.4
