@@ -19,12 +19,13 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
-0.3.5-dev
+0.3.5
 -----
 
 Main changes:
 
 - In ConfMgmt, change FindWithVsWhere() to a static method.
+- PYTHON_HOME environment variable will automatically be set to the dir path of the Python (sys.executable).
 
 Bug fixes:
 
