@@ -282,7 +282,7 @@ class Repo(object):
 
         # if we have a reference path we must init the submodules
         if reference:
-            params = ["submodule", "init", "--recursive"]
+            params = ["submodule", "update", "--init", "--recursive"]
             params.append("--reference %s" % reference)
             param_string = " ".join(params)
             ret = RunCmd(cmd, param_string)
