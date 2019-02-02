@@ -19,6 +19,16 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+vNext
+-----
+
+Main changes:
+
+- Documentation added for Omnicache tool
+
+Bug fixes:
+
+
 0.3.5
 -----
 
