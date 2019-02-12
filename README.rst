@@ -19,15 +19,16 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
-vNext
+0.3.6-dev
 -----
 
-Main changes:
+Main Changes:
 
 - Documentation added for Omnicache tool
 
-Bug fixes:
+Bug Fixes:
 
+- Git submodules are now initialized correctly when using a reference. It was failing silently previously.
 
 0.3.5
 -----
