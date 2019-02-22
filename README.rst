@@ -29,6 +29,7 @@ Main Changes:
 Bug Fixes:
 
 - Git submodules are now initialized correctly when using a reference. It was failing silently previously.
+- Logging output is now handled correct (handlers were being created incorrectly and extra output was going to the console)
 
 0.3.5
 -----

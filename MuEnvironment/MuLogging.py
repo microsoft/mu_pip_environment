@@ -113,7 +113,7 @@ def setup_txt_logger(directory, filename="log", logging_level=logging.INFO,
     logger = logging.getLogger(logging_namespace)
     log_formatter = formatter
     if log_formatter is None:
-        log_formatter = logging.Formatter("%(name)s: %(levelname)s - %(message)s")
+        log_formatter = logging.Formatter("%(levelname)s - %(message)s")
 
     if not os.path.isdir(directory):
         os.makedirs(directory)
@@ -166,25 +166,36 @@ def setup_markdown_logger(directory, filename="log", logging_level=logging.INFO,
 def setup_console_logging(logging_level=logging.INFO, formatter=None, logging_namespace='',
                           isVerbose=False, use_azure_colors=False, use_color=True):
 
-    formatter_msg = formatter
-    if formatter_msg is None:
+    if formatter is None and isVerbose:
         formatter_msg = "%(name)s: %(levelname)s - %(message)s"
+    elif formatter is None:
+        formatter_msg = "%(levelname)s - %(message)s"
+    else:
+        formatter_msg = formatter
 
+    formatter = logging.Formatter(formatter_msg)
+
+    # create a safe handler so that any logging emitted when creating the ansi logger is handled
+    safeHandler = logging.StreamHandler()
+    safeHandler.setLevel(logging_level)
+    safeHandler.addFilter(get_mu_filter(isVerbose))
+    safeHandler.setFormatter(formatter)
+    logger = logging.getLogger(logging_namespace)
+    logger.addHandler(safeHandler)
+
+    # create the ansi logger if needed
     if use_azure_colors or use_color and MuAnsiHandler:
         formatter = MuAnsiHandler.ColoredFormatter(formatter_msg, use_azure=use_azure_colors)
-        console = MuAnsiHandler.ColoredStreamHandler()
-    else:
-        formatter = logging.Formatter(formatter_msg)
-        console = logging.StreamHandler()
-
-    console.setLevel(logging_level)
-    console.addFilter(get_mu_filter(isVerbose))
-    console.setFormatter(formatter)
-
-    logger = logging.getLogger(logging_namespace)
-    logger.addHandler(console)
-
-    return console
+        coloredHandler = MuAnsiHandler.ColoredStreamHandler()
+        coloredHandler.setLevel(logging_level)
+        coloredHandler.addFilter(get_mu_filter(isVerbose))
+        coloredHandler.setFormatter(formatter)
+        # make sure to remove the safe handler so we don't have two handlers
+        logger.removeHandler(safeHandler)
+        logger.addHandler(coloredHandler)
+        return coloredHandler
+    # return the safe handler if we didn't create a colored handler
+    return safeHandler
 
 
 def stop_logging(loghandle, logging_namespace=''):
