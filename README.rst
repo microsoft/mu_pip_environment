@@ -25,6 +25,7 @@ Version History
 Main Changes:
 
 - Documentation added for Omnicache tool
+- Completed isolation of ShellEnviornment as a functional singleton. This allows for behaviors like updating PATHs programatically during setup while maintaining APIs like GetBuildVars().
 
 Bug Fixes:
 
