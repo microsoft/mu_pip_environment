@@ -197,6 +197,18 @@ class ShellEnvironment(metaclass=Singleton):
         if path_element not in self.active_pypath:
             self._internal_set_pypath([path_element] + self.active_pypath)
 
+    def replace_path_element(self, old_path_element, new_path_element):
+        # Generate a new PATH by iterating through the old PATH and replacing
+        # old_path_element with new_path_element where it is found.
+        self.logger.debug("Replacing PATH element {0} with {1}".format(old_path_element, new_path_element))
+        self._internal_set_path([x if x != old_path_element else new_path_element for x in self.active_path])
+
+    def replace_pypath_element(self, old_pypath_element, new_pypath_element):
+        # Generate a new PYPATH by iterating through the old PYPATH and replacing
+        # old_pypath_element with new_pypath_element where it is found.
+        self.logger.debug("Replacing PYPATH element {0} with {1}".format(old_pypath_element, new_pypath_element))
+        self._internal_set_pypath([x if x != old_pypath_element else new_pypath_element for x in self.active_pypath])
+
     def get_build_var(self, var_name):
         return self.active_buildvars.GetValue(var_name)
 
