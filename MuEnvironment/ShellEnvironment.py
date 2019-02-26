@@ -209,6 +209,18 @@ class ShellEnvironment(metaclass=Singleton):
         self.logger.debug("Replacing PYPATH element {0} with {1}".format(old_pypath_element, new_pypath_element))
         self._internal_set_pypath([x if x != old_pypath_element else new_pypath_element for x in self.active_pypath])
 
+    def remove_path_element(self, path_element):
+        # Generate a new PATH by iterating through the old PYPATH and removing
+        # path_element if it is found.
+        self.logger.debug("Removing PATH element {0}".format(path_element))
+        self._internal_set_path([x for x in self.active_path if x != path_element])
+
+    def remove_pypath_element(self, pypath_element):
+        # Generate a new PYPATH by iterating through the old PYPATH and removing
+        # pypath_element if it is found.
+        self.logger.debug("Removing PYPATH element {0}".format(pypath_element))
+        self._internal_set_pypath([x for x in self.active_pypath if x != pypath_element])
+
     def get_build_var(self, var_name):
         return self.active_buildvars.GetValue(var_name)
 

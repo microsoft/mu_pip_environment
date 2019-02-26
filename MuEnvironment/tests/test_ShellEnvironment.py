@@ -145,7 +145,7 @@ class TestBasicEnvironmentManipulation(unittest.TestCase):
             self.assertIn(elem, shell_env.active_pypath, "the active path should contain all elements")
             self.assertIn(elem, sys.path, "the sys path should contain all elements")
 
-    def test_insert_append_replace_path(self):
+    def test_insert_append_remove_replace_path(self):
         shell_env = SE.ShellEnvironment()
 
         # Start with a known PATH
@@ -178,7 +178,11 @@ class TestBasicEnvironmentManipulation(unittest.TestCase):
         shell_env.replace_path_element("PATH1", "PATH2")
         self.assertEqual(old_path, shell_env.active_path)
 
-    def test_insert_append_replace_pypath(self):
+        # Test that removing an element works as expected
+        shell_env.remove_path_element(new_mid_elem)
+        self.assertNotIn(new_mid_elem, shell_env.active_path)
+
+    def test_insert_append_remove_replace_pypath(self):
         shell_env = SE.ShellEnvironment()
 
         # Start with a known PATH
@@ -205,12 +209,16 @@ class TestBasicEnvironmentManipulation(unittest.TestCase):
         # Test replacing an element on the pypath
         new_mid_elem = 'NEWMIDDLEPATH'
         shell_env.replace_pypath_element(mid_elem, new_mid_elem)
-        self.assertEqual(shell_env.active_path[1], new_mid_elem)
+        self.assertEqual(shell_env.active_pypath[1], new_mid_elem)
 
         # Test replacing an element that doesn't exist
         old_pypath = shell_env.active_pypath
         shell_env.replace_pypath_element("PATH1", "PATH2")
         self.assertEqual(old_pypath, shell_env.active_pypath)
+
+        # Test that removing an element works as expected
+        shell_env.remove_pypath_element(new_mid_elem)
+        self.assertNotIn(new_mid_elem, shell_env.active_pypath)
 
     def test_can_set_and_get_build_vars(self):
         shell_env = SE.ShellEnvironment()

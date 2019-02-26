@@ -27,6 +27,7 @@ Main Changes:
 - Documentation added for Omnicache tool
 - Completed isolation of ShellEnviornment as a functional singleton. This allows for behaviors like updating PATHs programatically during setup while maintaining APIs like GetBuildVars().
 - Add replace_path_element and replace_pypath_element, which will find an element on the PATH/PYPATH, replace it with a different element, and publish the newly modified path
+- Add remove_pypath_element and remove_path_element, which will find an element on the PATH/PYPATH, remove it, and publish the newly modified path
 
 Bug Fixes:
 
