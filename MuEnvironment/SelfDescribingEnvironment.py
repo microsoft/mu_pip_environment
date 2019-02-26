@@ -27,10 +27,11 @@
 ##
 import os
 import sys
+import logging
 from MuEnvironment import ShellEnvironment
 from MuEnvironment import EnvironmentDescriptorFiles as EDF
 from MuEnvironment import ExternalDependencies
-import logging
+from MuPythonLibrary.UtilityFunctions import GetHostInfo
 
 ENVIRONMENT_BOOTSTRAP_COMPLETE = False
 ENV_STATE = None
@@ -46,9 +47,9 @@ class SelfDescribingEnvironment(object):
         # Start with the provided set.
         self.scopes = scopes
         # Add any OS-specific scope.
-        if os.name == 'nt':
+        if GetHostInfo().os == "Windows":
             self.scopes += ('global-win',)
-        elif os.name == 'posix':
+        elif GetHostInfo().os == "Linux":
             self.scopes += ('global-nix',)
         # Add the global scope.
         self.scopes += ('global',)
@@ -216,8 +217,16 @@ class SelfDescribingEnvironment(object):
         for extdep in self._get_extdeps():
             # Check to see whether it's necessary to fetch the files.
             if not extdep.verify():
+                # Get rid of extdep's published path since it could get changed
+                # during the fetch routine.
+                if 'set_path' in extdep.flags:
+                    env_object.remove_path_element(extdep.published_path)
+                if 'set_pypath' in extdep.flags:
+                    env_object.remove_pypath_element(extdep.published_path)
                 extdep.clean()
                 extdep.fetch()
+                # Re-apply the extdep to environment
+                self._apply_descriptor_object_to_env(extdep, env_object)
 
     def clean_extdeps(self, env_object):
         for extdep in self._get_extdeps():

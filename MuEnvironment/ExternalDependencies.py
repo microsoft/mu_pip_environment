@@ -35,6 +35,7 @@ import yaml
 from MuEnvironment import VersionAggregator
 from MuPythonLibrary.UtilityFunctions import RunCmd
 from MuPythonLibrary.UtilityFunctions import GetNugetCmd
+from MuPythonLibrary.UtilityFunctions import GetHostInfo
 
 
 class ExternalDependency(object):
@@ -58,10 +59,46 @@ class ExternalDependency(object):
             self.descriptor_location, self.name + "_extdep")
         self.state_file_path = os.path.join(
             self.contents_dir, "extdep_state.json")
-        self.published_path = self.contents_dir
+        self.published_path = self.compute_published_path()
+
+    def compute_published_path(self):
+        new_published_path = self.contents_dir
+
+        if self.flags and "host_specific" in self.flags and self.verify():
+            host = GetHostInfo()
+
+            logging.info("Computing path for {0} located at {1} on {2}".format(self.name, self.contents_dir, str(host)))
+
+            acceptable_names = []
+
+            # we want to list all the possible folders we would be comfortable using
+            # and then check if they are present.
+            # The "ideal" directory name is OS-ARCH-BIT
+            acceptable_names.append("-".join((host.os, host.arch, host.bit)))
+            acceptable_names.append("-".join((host.os, host.arch)))
+            acceptable_names.append("-".join((host.os, host.bit)))
+            acceptable_names.append("-".join((host.arch, host.bit)))
+            acceptable_names.append(host.os)
+            acceptable_names.append(host.arch)
+            acceptable_names.append(host.bit)
+
+            new_published_path = None
+            for name in acceptable_names:
+                dirname = os.path.join(self.contents_dir, name)
+                if os.path.isdir(dirname):
+                    logging.info("{0} was found!".format(dirname))
+                    new_published_path = dirname
+                    break
+                logging.debug("{0} does not exist".format(dirname))
+
+            if new_published_path is None:
+                logging.error("Could not find appropriate folder for {0}. {1}".format(self.name, str(host)))
+                new_published_path = self.contents_dir
 
         if self.flags and "include_separator" in self.flags:
-            self.published_path += os.path.sep
+            new_published_path += os.path.sep
+
+        return new_published_path
 
     def _clean_directory(self, dir_path):
         retry = 1
@@ -167,7 +204,9 @@ class NugetDependency(ExternalDependency):
         #
         if self._fetch_from_cache(package_name):
             # We successfully found the package in the cache.
+            # The published path may change now that the package has been unpacked.
             # Bail.
+            self.published_path = self.compute_published_path()
             return
 
         #
@@ -211,6 +250,9 @@ class NugetDependency(ExternalDependency):
         # Finally, delete the temp directory.
         #
         self._clean_directory(temp_directory)
+
+        # The published path may change now that the package has been unpacked.
+        self.published_path = self.compute_published_path()
 
     def get_temp_dir(self):
         return self.contents_dir + "_temp"

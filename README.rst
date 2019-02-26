@@ -28,6 +28,7 @@ Main Changes:
 - Completed isolation of ShellEnviornment as a functional singleton. This allows for behaviors like updating PATHs programatically during setup while maintaining APIs like GetBuildVars().
 - Add replace_path_element and replace_pypath_element, which will find an element on the PATH/PYPATH, replace it with a different element, and publish the newly modified path
 - Add remove_pypath_element and remove_path_element, which will find an element on the PATH/PYPATH, remove it, and publish the newly modified path
+- Added "host_specific" flag to allow ext_deps to have different tool versions for different OS's, architectures, and bit sizes. For more information about how the selection process is made, refer [here](https://microsoft.github.io/mu/dyn/mu_basecore/BaseTools/NugetPublishing/ReadMe).
 
 Bug Fixes:
 
