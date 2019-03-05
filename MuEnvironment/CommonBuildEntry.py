@@ -276,7 +276,19 @@ def update_process(my_workspace_path, my_project_scope):
     logging.info("Done.\n")
 
 
-def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logging_mode="standard"):
+def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, worker_module, logging_mode="standard"):
+    """The common entry point for building a project or platform target
+
+    Positional arguments:
+    my_workspace_path
+    my_project_scope
+    my_module_pkg_paths
+    worker_module -- the name of the Python module to be invoked for building. must contain a subclass of UefiBuild
+                     and must already exist in sys.path
+
+    Keyword arguments:
+    logging_mode -- deprecated (will be removed from future interfaces)
+    """
     #
     # Initialize file-based logging.
     #
@@ -318,8 +330,10 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logg
     if(helper.LoadFromPluginManager(pluginManager) > 0):
         raise Exception("One or more helper plugins failed to load.")
 
-    # NOTE: This implicitly assumes that the PlatformBuild script path is in PYTHONPATH.
-    from PlatformBuildWorker import PlatformBuilder
+    # NOTE: This implicitly assumes that the path to the module
+    #       identified by 'worker_module' is in PYTHONPATH.
+    PlatformBuildWorker = __import__(worker_module)
+    PlatformBuilder = PlatformBuildWorker.PlatformBuilder
 
     #
     # Now we can actually kick off a build.
@@ -361,7 +375,7 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logg
 
 
 def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project_scope,
-                my_module_pkgs, my_module_pkg_paths):
+                my_module_pkgs, my_module_pkg_paths, worker_module='PlatformBuildWorker'):
     # This should live somewhere else as soon as someone else needs the logic.
     # I just don't want to introduce a version dependency at this exact moment.
     class IntermediateArgParser(argparse.ArgumentParser):
@@ -420,4 +434,4 @@ def build_entry(my_script_path, my_workspace_path, my_required_repos, my_project
     else:
         if args.update_first:
             update_process(my_workspace_path, my_project_scope)
-        build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, logging_mode)
+        build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, worker_module, logging_mode)

@@ -19,6 +19,17 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.7-dev
+-----
+
+Main Changes:
+
+- Add an optional named parameter in CommonBuildEntry to allow caller to pass the module name that will be loaded to find the PlatformBuilder. This gives more flexibility to the caller and also allows single-file builders.
+
+Bug Fixes:
+
+- N/A
+
 0.3.6
 -----
 
