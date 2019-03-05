@@ -29,7 +29,7 @@ Main Changes:
 
 Bug Fixes:
 
-- N/A
+- Fixed a bug where log handlers were added to the logger multiple times in some scenarios
 
 0.3.6
 -----

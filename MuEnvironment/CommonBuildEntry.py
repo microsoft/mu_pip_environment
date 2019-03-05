@@ -147,16 +147,14 @@ def configure_base_logging(mode="standard", sections=[]):
         MuLogging.get_mu_filter().addSection(section)
 
     if mode == "vs":
-        console = MuLogging.setup_console_logging(use_color=False, formatter="%(message)s", logging_level=logging.DEBUG)
+        MuLogging.setup_console_logging(use_color=False, formatter="%(message)s", logging_level=logging.DEBUG)
     elif mode == 'verbose':
-        console = MuLogging.setup_console_logging(logging_level=logging.DEBUG)
+        MuLogging.setup_console_logging(logging_level=logging.DEBUG)
     elif mode == 'simple':
-        console = MuLogging.setup_console_logging(logging_level=logging.INFO)
+        MuLogging.setup_console_logging(logging_level=logging.INFO)
     else:
-        console = MuLogging.setup_console_logging(logging_level=logging.WARNING)
+        MuLogging.setup_console_logging(logging_level=logging.WARNING)
 
-    # Add the console as a logger, now that it's configured.
-    logger.addHandler(console)
 
 #
 # setup_process() automates all of the processes that should be unique
