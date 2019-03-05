@@ -87,7 +87,7 @@ class VarDict(object):
             new_copy.SetValue(key, value, comment, override)
         return new_copy
 
-    def GetValue(self, k):
+    def GetValue(self, k, default=None):
         key = k.upper()
         en = self.GetEntry(key)
         if(en is not None):
@@ -95,7 +95,7 @@ class VarDict(object):
             return en.GetValue()
         else:
             self.Logger.debug("Key %s not found" % key)
-            return None
+            return default
 
     def SetValue(self, k, v, comment, overridable=False):
         key = k.upper()

@@ -25,6 +25,7 @@ Version History
 Main Changes:
 
 - Add an optional named parameter in CommonBuildEntry to allow caller to pass the module name that will be loaded to find the PlatformBuilder. This gives more flexibility to the caller and also allows single-file builders.
+- Update VarDict.GetValue() to take a 'default' named parameter (similar to dict.get()). This default will be returned if the key is not in the VarDict.
 
 Bug Fixes:
 

@@ -354,8 +354,8 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, work
     # get all vars needed as we can't do any logging after shutdown otherwise our log is cleared.
     # Log viewer
     ep = PB.env.GetValue("LaunchBuildLogProgram")
-    LogOnSuccess = PB.env.GetValue("LaunchLogOnSuccess")
-    LogOnError = PB.env.GetValue("LaunchLogOnError")
+    LogOnSuccess = PB.env.GetValue("LaunchLogOnSuccess", default="FALSE")
+    LogOnError = PB.env.GetValue("LaunchLogOnError", default="FALSE")
 
     # end logging
     logging.shutdown()
