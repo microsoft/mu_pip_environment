@@ -19,6 +19,13 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.8-dev
+-----
+
+Main Changes:
+
+- Added print out of start time and end time in addition of your
+
 0.3.7
 -----
 
