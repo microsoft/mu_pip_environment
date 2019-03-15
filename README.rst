@@ -26,6 +26,7 @@ Main Changes:
 
 - Added print out of start time and end time in addition of your
 - Add support for cmd line override of max build threads in UefiBuild.py
+- Added support for getting multiple DSC's in the same folder for MuBuildPlugins in PluginManager
 
 0.3.7
 -----
