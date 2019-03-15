@@ -203,10 +203,11 @@ class UefiBuilder(object):
         BuildType = self.env.GetValue("TARGET")
         MuLogging.log_progress("Running Build %s" % BuildType)
 
-        # set target, arch toolchain
+        # set target, arch, toolchain, threads, and platform
         params = "-p " + self.env.GetValue("ACTIVE_PLATFORM")
         params += " -b " + BuildType
         params += " -t " + self.env.GetValue("TOOL_CHAIN_TAG")
+        params += " -n " + self.env.GetValue("MAX_CONCURRENT_THREAD_NUMBER")
 
         # Set the arch flags.  Multiple are split by space
         rt = self.env.GetValue("TARGET_ARCH").split(" ")

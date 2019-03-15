@@ -20,11 +20,12 @@ Version History
 ===============
 
 0.3.8-dev
------
+---------
 
 Main Changes:
 
 - Added print out of start time and end time in addition of your
+- Add support for cmd line override of max build threads in UefiBuild.py
 
 0.3.7
 -----
