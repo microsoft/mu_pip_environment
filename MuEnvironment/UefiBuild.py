@@ -77,7 +77,7 @@ class UefiBuilder(object):
 
         try:
             MuLogging.log_progress("Start time: {0}".format(datetime.datetime.now()))
-            start_time_ns = time.perf_counter_ns()
+            start_time = time.perf_counter()
             self.ParseForHelp()
             if(self.ShowHelpOnly):
                 self.ShowHelp()
@@ -155,8 +155,8 @@ class UefiBuilder(object):
             logging.error(traceback.format_exc())
             return -1
         finally:
-            end_time_ns = time.perf_counter_ns()
-            elapsed_time_s = int((end_time_ns - start_time_ns) / 1000000000)
+            end_time = time.perf_counter()
+            elapsed_time_s = int((end_time - start_time))
             MuLogging.log_progress("End time: {0}\t Total time Elapsed: {1}".format(
                 datetime.datetime.now(), datetime.timedelta(seconds=elapsed_time_s)))
 
