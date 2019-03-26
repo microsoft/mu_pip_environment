@@ -271,8 +271,10 @@ def BootstrapEnvironment(workspace, scopes=()):
 
         # Bind our current execution environment into the shell vars.
         shell_env.set_shell_var("PYTHON_HOME", os.path.dirname(sys.executable))
-        # Support legacy variable for older releases.
+        # MU_DEPRECATED - Support legacy variable for older releases.
         shell_env.set_shell_var("PYTHON3", sys.executable)
+        # PYTHON_COMMAND is required to be set for Linux
+        shell_env.set_shell_var("PYTHON_COMMAND", sys.executable)
 
         # Debug the environment that was produced.
         shell_env.log_environment()
