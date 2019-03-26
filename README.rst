@@ -19,12 +19,12 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
-0.3.8-dev
+0.3.8
 ---------
 
 Main Changes:
 
-- Added print out of start time and end time in addition of your
+- Added print out of start time and end time in addition to elapsed time of build
 - Add support for cmd line override of max build threads in UefiBuild.py
 - Added support for getting multiple DSC's in the same folder for MuBuildPlugins in PluginManager
 - Setting PYTHON_COMMAND during setup for EDKII 201903 support
