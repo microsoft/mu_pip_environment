@@ -237,31 +237,31 @@ def remove_output_stream(handler, logging_namespace=''):
 
 def scan_compiler_output(output_stream):
     # seek to the start of the output stream
-    errors = []
-    warnings = []
+    problems = []
     output_stream.seek(0, 0)
     error_exp = re.compile(r"error C(\d+):")
     edk2_error_exp = re.compile(r"error F(\d+):")
     buildpy_error_exp = re.compile(r"error (\d+)E:")
     linker_error_exp = re.compile(r"error LNK(\d+):")
     warning_exp = re.compile(r"warning C(\d+):")
-    for line in output_stream.readlines():
+    for raw_line in output_stream.readlines():
+        line = raw_line.strip("\n").strip()
         match = error_exp.search(line)
         if match is not None:
-            errors.append("Compile: Error: {0}".format(line))
+            problems.append((logging.ERROR, "Compile: Error: {0}".format(line)))
         match = warning_exp.search(line)
         if match is not None:
-            warnings.append("Compile: Warning: {0}".format(line))
+            problems.append((logging.WARNING, "Compile: Warning: {0}".format(line)))
         match = linker_error_exp.search(line)
         if match is not None:
-            errors.append("Linker: Error: {0}".format(line))
+            problems.append((logging.ERROR, "Linker: Error: {0}".format(line)))
         match = edk2_error_exp.search(line)
         if match is not None:
-            errors.append("EDK2: Error: {0}".format(line))
+            problems.append((logging.ERROR, "EDK2: Error: {0}".format(line)))
         match = buildpy_error_exp.search(line)
         if match is not None:
-            errors.append("Build.py: Error: {0}".format(line))
-    return errors, warnings
+            problems.append((logging.ERROR, "Build.py: Error: {0}".format(line)))
+    return problems
 
 
 class MuLogFilter(logging.Filter):

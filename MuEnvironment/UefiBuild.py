@@ -235,12 +235,10 @@ class UefiBuilder(object):
             params += " -D " + key + "=" + value
         output_stream = MuLogging.create_output_stream()
         ret = RunCmd("build", params)
-        errors, warnings = MuLogging.scan_compiler_output(output_stream)
+        problems = MuLogging.scan_compiler_output(output_stream)
         MuLogging.remove_output_stream(output_stream)
-        for warning in warnings:
-            logging.warning(warning)
-        for error in errors:
-            logging.error(error)
+        for level, problem in problems:
+            logging.log(level, problem)
 
         if(ret != 0):
             return ret

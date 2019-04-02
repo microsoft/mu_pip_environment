@@ -19,6 +19,14 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.9-dev
+---------
+
+Main Changes:
+
+- Errors and warnings from the compiler are now intermingled and displayed in the order that they are emitted.
+
+
 0.3.8
 ---------
 
