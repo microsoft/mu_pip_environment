@@ -234,7 +234,17 @@ class UefiBuilder(object):
         for key, value in buildvars.items():
             params += " -D " + key + "=" + value
         output_stream = MuLogging.create_output_stream()
+
+        env = ShellEnvironment.ShellEnvironment()
+        # WORKAROUND - Pin the PYTHONHASHSEED so that TianoCore build tools
+        #               have consistent ordering. Addresses incremental builds.
+        pre_build_env_chk = env.checkpoint()
+        env.set_shell_var('PYTHONHASHSEED', '0')
+        env.log_environment()
         ret = RunCmd("build", params)
+        # WORKAROUND - Undo the workaround.
+        env.restore_checkpoint(pre_build_env_chk)
+
         problems = MuLogging.scan_compiler_output(output_stream)
         MuLogging.remove_output_stream(output_stream)
         for level, problem in problems:

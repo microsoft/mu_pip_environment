@@ -25,6 +25,7 @@ Version History
 Main Changes:
 
 - Errors and warnings from the compiler are now intermingled and displayed in the order that they are emitted.
+- Add a workaround for incremental build break in Mu release/201903. Pinning PYTHONHASHSEED prevents unordered set() and dict() structures from changing build-to-build.
 
 
 0.3.8
