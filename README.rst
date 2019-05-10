@@ -19,6 +19,13 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.10-dev
+---------
+
+Main Changes:
+
+- Add documentation for Plugin Manager and External Dependency
+
 0.3.9
 ---------
 
