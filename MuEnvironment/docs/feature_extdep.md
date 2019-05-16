@@ -6,9 +6,31 @@ External dependencies started as we saw a need to no longer carry binary files i
 
 It was also becoming troublesome to update binaries across branches and products. In addition, moving to a multi-repo world, it was becoming difficult to locate the binaries we needed to build a given product or platform.
 
-## Why NuGet
+## NuGet Dependency
 
-As of writing (April 2019), we only support resolving nuget dependencies, though this is easy to extend and we are considering other options. We picked NuGet as it's easy to understand, offers caching and authentication as well as being fairly platform and language agnostic.
+NuGet is easy to understand, offers caching and authentication as well as being fairly platform and language agnostic.
+
+## Web Dependency
+
+Web dependency will download whatever is located at the source URL. It has three special fields:
+
+### internal_path
+
+This describes the internal structure of whatever we are downloading.
+
+If you are just downloading a file, include the name you would like the file to be.
+
+If you are downloading a directory, indicate so with a / before the path. The folder the path points to will have it's contents copied into the final name_ext_dep folder.
+
+### compression_type
+
+Including this field is indicating that the file being downloaded is compressed and that you would like the contents of internal_path to be extracted. If you have a compressed file and would not like it to be decompressed, omit this field.
+
+Currently supports tar and zip. If the file is not compressed, omit this field.
+
+### sha256
+
+If desired, you can provide the hash of your file. This hash will be checked against what is being downloaded to ensure it is valid.
 
 ## How to use an ext_dep
 

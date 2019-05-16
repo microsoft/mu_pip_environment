@@ -25,6 +25,7 @@ Version History
 Main Changes:
 
 - Add documentation for Plugin Manager and External Dependency
+- Adding WebDependency (with documentation and tests). WebDependency adds ExternalDependency type web, which resolves a file at a given URL, checks it against a known sha256 hash, and unpacks it into the name_ext_dep folder.
 
 0.3.9
 ---------

@@ -30,7 +30,7 @@ import sys
 import logging
 from MuEnvironment import ShellEnvironment
 from MuEnvironment import EnvironmentDescriptorFiles as EDF
-from MuEnvironment import ExternalDependencies
+from MuEnvironment import ExternalDependency
 from MuPythonLibrary.UtilityFunctions import GetHostInfo
 
 ENVIRONMENT_BOOTSTRAP_COMPLETE = False
@@ -186,7 +186,7 @@ class SelfDescribingEnvironment(object):
             for extdep_descriptor in reversed(self.extdeps):
                 # Use the helper factory to get an object
                 # capable of managing each dependency.
-                yield ExternalDependencies.ExtDepFactory(extdep_descriptor)
+                yield ExternalDependency.ExtDepFactory(extdep_descriptor)
 
     def _apply_descriptor_object_to_env(self, desc_object, env_object):
         # Walk through each possible environment modification
@@ -308,23 +308,3 @@ def VerifyEnvironment(workspace, scopes=()):
 
     # Clean all the dependencies.
     return build_env.verify_extdeps(shell_env)
-
-
-if __name__ == "__main__":
-    # For testing, make some assumptions about where this file is still located.
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    base_path = os.path.dirname(base_path)
-    base_path = os.path.dirname(base_path)
-    base_path = os.path.dirname(base_path)
-
-    # For testing, pick a project to use as the scope.
-    test_scope = ('test',)
-
-    # Clean the environment.
-    CleanEnvironment(base_path, test_scope)
-
-    # Update the environment.
-    UpdateDependencies(base_path, test_scope)
-
-    # Verify the environment.
-    VerifyEnvironment(base_path, test_scope)
