@@ -32,6 +32,7 @@ import shutil
 import tarfile
 import zipfile
 import tempfile
+import urllib.request
 from MuEnvironment import EnvironmentDescriptorFiles as EDF
 from MuEnvironment.WebDependency import WebDependency
 
@@ -94,7 +95,7 @@ class TestWebDependency(unittest.TestCase):
 
         ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
         ext_dep = WebDependency(ext_dep_descriptor)
-        with self.assertRaises(Exception):
+        with self.assertRaises(urllib.error.HTTPError):
             ext_dep.fetch()
             self.fail("should have thrown an Exception")
 

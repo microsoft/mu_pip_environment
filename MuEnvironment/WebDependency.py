@@ -29,7 +29,8 @@ import logging
 import shutil
 import tarfile
 import zipfile
-import urllib
+import urllib.error
+import urllib.request
 from MuEnvironment.ExternalDependency import ExternalDependency
 
 
