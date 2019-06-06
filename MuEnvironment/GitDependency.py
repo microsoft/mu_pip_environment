@@ -1,5 +1,5 @@
 # @file GitDependency.py
-# This module implements ExternalDependency for a git repository 
+# This module implements ExternalDependency for a git repository
 # This should only be used for read-only repositories. Any changes in
 # these extdeps will be removed.
 #
@@ -32,6 +32,7 @@ from MuEnvironment.ExternalDependency import ExternalDependency
 from MuEnvironment import RepoResolver
 from MuEnvironment.MuGit import Repo
 from MuEnvironment import VersionAggregator
+
 
 class GitDependency(ExternalDependency):
     '''
@@ -83,7 +84,7 @@ class GitDependency(ExternalDependency):
         if result and len(os.listdir(self._local_repo_root_path)) == 0:
             self.logger.error("no files in Git Dependency")
             result = False
-        
+
         if result:
             # valid repo folder
             r = Repo(self._local_repo_root_path)
@@ -93,7 +94,7 @@ class GitDependency(ExternalDependency):
             elif(r.dirty):
                 self.logger.error("Git Dependency: dirty")
                 result = False
-            
+
             if(r.head.commit != self.version):
                 self.logger.error(f"Git Dependency: head is {r.head.commit} and version is {self.version}")
                 result = False
