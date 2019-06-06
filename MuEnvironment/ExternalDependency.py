@@ -169,9 +169,12 @@ def ExtDepFactory(descriptor):
     # Add all supported external dependencies here to avoid import errors.
     from MuEnvironment.WebDependency import WebDependency
     from MuEnvironment.NugetDependency import NugetDependency
+    from MuEnvironment.GitDependency import GitDependency
     if descriptor['type'] == NugetDependency.TypeString:
         return NugetDependency(descriptor)
     elif descriptor['type'] == WebDependency.TypeString:
         return WebDependency(descriptor)
+    elif descriptor['type'] == GitDependency.TypeString:
+        return GitDependency(descriptor)
 
     raise ValueError("Unknown extdep type '%s' requested!" % descriptor['type'])
