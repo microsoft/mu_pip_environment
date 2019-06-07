@@ -63,18 +63,16 @@ class GitDependency(ExternalDependency):
 
     def clean(self):
         self.logger.debug("Cleaning git dependency directory for '%s'..." % self.name)
-        if not os.path.isdir(self._local_repo_root_path):
-            # already clean
-            return
 
-        if len(os.listdir(self._local_repo_root_path)) == 0:
-            # already clean
-            return
+        if os.path.isdir(self._local_repo_root_path):
+            # Clean up git dependency specific stuff
+            RepoResolver.clear_folder(self.contents_dir)
 
-        RepoResolver.resolve(self._local_repo_root_path, self._repo_resolver_dep_obj, update_ok=True, force=True)
+        # Let super class clean up common dependency stuff
+        super().clean()
 
     # override verify due to different scheme with git
-    def verify(self):
+    def verify(self, logversion=True):
         result = True
 
         if not os.path.isdir(self._local_repo_root_path):
@@ -100,6 +98,7 @@ class GitDependency(ExternalDependency):
                 result = False
 
         self.logger.debug("Verify '%s' returning '%s'." % (self.name, result))
-        VersionAggregator.GetVersionAggregator().ReportVersion(self.name, self.version,
-                                                               VersionAggregator.VersionTypes.INFO)
+        if(logversion):
+            VersionAggregator.GetVersionAggregator().ReportVersion(self.name, self.version,
+                                                                   VersionAggregator.VersionTypes.INFO)
         return result

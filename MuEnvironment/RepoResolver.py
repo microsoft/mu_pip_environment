@@ -157,9 +157,8 @@ def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_
 
     return packages
 
+
 # Gets the details of a particular repo
-
-
 def get_details(abs_file_system_path):
     repo = Repo(abs_file_system_path)
     url = repo.remotes.origin.url
