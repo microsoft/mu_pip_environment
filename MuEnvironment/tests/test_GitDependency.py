@@ -29,6 +29,7 @@ import os
 import unittest
 import logging
 import shutil
+import stat
 import tempfile
 from MuEnvironment import EnvironmentDescriptorFiles as EDF
 from MuEnvironment.GitDependency import GitDependency
@@ -57,7 +58,7 @@ def prep_workspace():
         test_dir = tempfile.mkdtemp()
         logging.debug("temp dir is: %s" % test_dir)
     else:
-        shutil.rmtree(test_dir)
+        clean_workspace()
         test_dir = tempfile.mkdtemp()
 
 
@@ -67,7 +68,15 @@ def clean_workspace():
         return
 
     if os.path.isdir(test_dir):
-        shutil.rmtree(test_dir)
+
+        def dorw(action, name, exc):
+            os.chmod(name, stat.S_IWRITE)
+            if(os.path.isdir(name)):
+                os.rmdir(name)
+            else:
+                os.remove(name)
+
+        shutil.rmtree(test_dir, onerror=dorw)
         test_dir = None
 
 
@@ -86,7 +95,7 @@ class TestGitDependency(unittest.TestCase):
         clean_workspace()
 
     # good case
-    def test_good_repo_at_top_of_tree(self):
+    def test_fetch_verify_good_repo_at_top_of_tree(self):
         ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
         with open(ext_dep_file_path, "w+") as ext_dep_file:
             ext_dep_file.write(hw_json_template % uptodate_version)
@@ -94,9 +103,10 @@ class TestGitDependency(unittest.TestCase):
         ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
         ext_dep = GitDependency(ext_dep_descriptor)
         ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(logversion=False))
         self.assertEqual(ext_dep.version, uptodate_version)
 
-    def test_good_repo_at_not_top_of_tree(self):
+    def test_fetch_verify_good_repo_at_not_top_of_tree(self):
         ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
         with open(ext_dep_file_path, "w+") as ext_dep_file:
             ext_dep_file.write(hw_json_template % behind_one_version)
@@ -104,9 +114,10 @@ class TestGitDependency(unittest.TestCase):
         ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
         ext_dep = GitDependency(ext_dep_descriptor)
         ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(logversion=False))
         self.assertEqual(ext_dep.version, behind_one_version)
-    
-    def test_non_existant_repo_commit_hash(self):
+
+    def test_fetch_verify_non_existant_repo_commit_hash(self):
         ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
         with open(ext_dep_file_path, "w+") as ext_dep_file:
             ext_dep_file.write(hw_json_template % invalid_version)
@@ -114,7 +125,136 @@ class TestGitDependency(unittest.TestCase):
         ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
         ext_dep = GitDependency(ext_dep_descriptor)
         ext_dep.fetch()
-        #self.assertEqual(ext_dep.version, invalid_version)
+        self.assertEqual(ext_dep.version, invalid_version)
+        self.assertFalse(ext_dep.verify(logversion=False), "Should not verify")
+
+    def test_verify_no_directory(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % invalid_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        self.assertFalse(ext_dep.verify(logversion=False))
+
+    def test_verify_empty_repo_dir(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % invalid_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        os.makedirs(ext_dep._local_repo_root_path, exist_ok=True)
+        self.assertFalse(ext_dep.verify(logversion=False))
+
+    def test_verify_invalid_git_repo(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % invalid_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        os.makedirs(ext_dep._local_repo_root_path, exist_ok=True)
+        with open(os.path.join(ext_dep._local_repo_root_path, "testfile.txt"), 'a') as myfile:
+            myfile.write("Test code\n")
+        self.assertFalse(ext_dep.verify(logversion=False))
+
+    def test_verify_dirty_git_repo(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % uptodate_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        ext_dep.fetch()
+        # now write a new file
+        with open(os.path.join(ext_dep._local_repo_root_path, "testfile.txt"), 'a') as myfile:
+            myfile.write("Test code to make repo dirty\n")
+        self.assertFalse(ext_dep.verify(logversion=False))
+
+    def test_verify_up_to_date(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % uptodate_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(logversion=False))
+
+    def test_verify_down_level_repo(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % behind_one_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(logversion=False), "Confirm valid ext_dep at one commit behind")
+
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % uptodate_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        self.assertFalse(ext_dep.verify(logversion=False), "Confirm downlevel repo fails to verify")
+        ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(logversion=False), "Confirm repo can be updated")
+
+    # CLEAN TESTS
+
+    def test_clean_no_directory(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % uptodate_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        self.assertFalse(os.path.isdir(ext_dep.contents_dir), "Confirm not ext dep directory before cleaning")
+        ext_dep.clean()
+        self.assertFalse(os.path.isdir(ext_dep.contents_dir))
+
+    def test_clean_dir_but_not_git_repo(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % invalid_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        os.makedirs(ext_dep._local_repo_root_path, exist_ok=True)
+        with open(os.path.join(ext_dep._local_repo_root_path, "testfile.txt"), 'a') as myfile:
+            myfile.write("Test code\n")
+        ext_dep.clean()
+        self.assertFalse(os.path.isdir(ext_dep.contents_dir))
+
+    def test_clean_dirty_git_repo(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % uptodate_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(), "Confirm repo is valid")
+        # now write a new file
+        with open(os.path.join(ext_dep._local_repo_root_path, "testfile.txt"), 'a') as myfile:
+            myfile.write("Test code to make repo dirty\n")
+        self.assertFalse(ext_dep.verify(), "Confirm repo is dirty")
+        ext_dep.clean()
+        self.assertFalse(os.path.isdir(ext_dep.contents_dir))
+
+    def test_clean_clean_repo(self):
+        ext_dep_file_path = os.path.join(test_dir, "hw_ext_dep.json")
+        with open(ext_dep_file_path, "w+") as ext_dep_file:
+            ext_dep_file.write(hw_json_template % uptodate_version)
+
+        ext_dep_descriptor = EDF.ExternDepDescriptor(ext_dep_file_path).descriptor_contents
+        ext_dep = GitDependency(ext_dep_descriptor)
+        ext_dep.fetch()
+        self.assertTrue(ext_dep.verify(), "Confirm repo is valid and clean")
+        ext_dep.clean()
+        self.assertFalse(os.path.isdir(ext_dep.contents_dir))
+
 
 if __name__ == '__main__':
     unittest.main()
