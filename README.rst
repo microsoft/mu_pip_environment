@@ -19,8 +19,17 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.11-dev
+------------
+
+Main Changes:
+
+- Add GitDependency.  GitDependency adds ExternalDependency type git, which resolves a git repo and a known commit.  This can be used for tracking git dependencies instead of submodules.
+- Add GitDependency unit tests
+- Add more documentation for ext_deps
+
 0.3.10
----------
+------
 
 Main Changes:
 
@@ -28,7 +37,7 @@ Main Changes:
 - Adding WebDependency (with documentation and tests). WebDependency adds ExternalDependency type web, which resolves a file at a given URL, checks it against a known sha256 hash, and unpacks it into the name_ext_dep folder.
 
 0.3.9
----------
+-----
 
 Main Changes:
 
@@ -37,7 +46,7 @@ Main Changes:
 
 
 0.3.8
----------
+-----
 
 Main Changes:
 

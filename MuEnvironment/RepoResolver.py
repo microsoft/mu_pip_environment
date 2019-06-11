@@ -52,14 +52,16 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
     ##
     if not os.path.isdir(git_path):
         clone_repo(git_path, dependency)
-        checkout(git_path, dependency, Repo(git_path), True, False)
-        return
+        r = Repo(git_path)
+        checkout(git_path, dependency, r, True, False)
+        return r
 
     folder_empty = len(os.listdir(git_path)) == 0
     if folder_empty:  # if the folder is empty, we can clone into it
         clone_repo(git_path, dependency)
-        checkout(git_path, dependency, Repo(git_path), True, False)
-        return
+        r = Repo(git_path)
+        checkout(git_path, dependency, r, True, False)
+        return r
 
     repo = Repo(git_path)
     if not repo.initalized:  # if there isn't a .git folder in there
@@ -68,14 +70,14 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
             logger.warning(
                 "Folder {0} is not a git repo and is being overwritten!".format(git_path))
             clone_repo(git_path, dependency)
-            checkout(git_path, dependency, Repo(git_path), True, False)
-            return
+            checkout(git_path, dependency, repo, True, False)
+            return repo
         else:
             if(ignore):
                 logger.warning(
                     "Folder {0} is not a git repo but Force parameter not used.  "
                     "Ignore State Allowed.".format(git_path))
-                return
+                return repo
             else:
                 logger.critical(
                     "Folder {0} is not a git repo and it is not empty.".format(git_path))
@@ -88,14 +90,14 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
             logger.warning(
                 "Folder {0} is a git repo but is dirty and is being overwritten as requested!".format(git_path))
             clone_repo(git_path, dependency)
-            checkout(git_path, dependency, Repo(git_path), True, False)
-            return
+            checkout(git_path, dependency, repo, True, False)
+            return repo
         else:
             if(ignore):
                 logger.warning(
                     "Folder {0} is a git repo but is dirty and Force parameter not used.  "
                     "Ignore State Allowed.".format(git_path))
-                return
+                return repo
             else:
                 logger.critical(
                     "Folder {0} is a git repo and is dirty.".format(git_path))
@@ -109,7 +111,7 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
                 "Folder {0} is a git repo but it is at a different repo and is "
                 "being overwritten as requested!".format(git_path))
             clone_repo(git_path, dependency)
-            checkout(git_path, dependency, Repo(git_path), True, False)
+            checkout(git_path, dependency, repo, True, False)
         else:
             if ignore:
                 logger.warning(
@@ -123,6 +125,7 @@ def resolve(file_system_path, dependency, force=False, ignore=False, update_ok=F
                     git_path, dependency["Url"], repo.remotes.origin.url))
 
     checkout(git_path, dependency, repo, update_ok, ignore, force)
+    return repo
 
 ##
 # dependencies is a list of objects - it has Path, Commit, Branch,
@@ -154,9 +157,8 @@ def resolve_all(WORKSPACE_PATH, dependencies, force=False, ignore=False, update_
 
     return packages
 
+
 # Gets the details of a particular repo
-
-
 def get_details(abs_file_system_path):
     repo = Repo(abs_file_system_path)
     url = repo.remotes.origin.url
