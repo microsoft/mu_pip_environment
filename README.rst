@@ -19,8 +19,8 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
-0.3.11-dev
-------------
+0.3.11
+------
 
 Main Changes:
 
