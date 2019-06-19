@@ -49,15 +49,15 @@ class WebDependency(ExternalDependency):
 
     def __init__(self, descriptor):
         super().__init__(descriptor)
-        self.internal_path = descriptor['internal_path']
+        self.internal_path = os.path.normpath(descriptor['internal_path'])
         self.compression_type = descriptor.get('compression_type', None)
         self.sha256 = descriptor.get('sha256', None)
 
         # If the internal path starts with a / that means we are downloading a directory
-        self.download_is_directory = self.internal_path.startswith("/")
+        self.download_is_directory = self.internal_path.startswith(os.path.sep)
 
         # Now we can get rid of the leading /
-        self.internal_path = self.internal_path.strip("/")
+        self.internal_path = self.internal_path.strip(os.path.sep)
 
     def linuxize_path(path):
         '''
@@ -100,7 +100,7 @@ class WebDependency(ExternalDependency):
         _ref.close()
 
     def get_internal_path_root(outer_dir, internal_path):
-        temp_path_root = os.path.split(internal_path)[0] if os.sep in internal_path else internal_path
+        temp_path_root = internal_path.split(os.sep)[0] if os.sep in internal_path else internal_path
         unzip_root = os.path.join(outer_dir, temp_path_root)
         return unzip_root
 
@@ -152,6 +152,7 @@ class WebDependency(ExternalDependency):
 
             # If the unzipped directory still exists, delete it.
             if os.path.isdir(unzip_root):
+                logging.error(f"Cleaning up {unzip_root}")
                 shutil.rmtree(unzip_root)
 
         # If we just downloaded a file, we need to create a directory named self.contents_dir,

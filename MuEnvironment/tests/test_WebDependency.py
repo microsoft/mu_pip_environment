@@ -240,6 +240,70 @@ class TestWebDependency(unittest.TestCase):
             else:
                 self.assertFalse(os.path.isfile(test_file[0]))
 
+    # Test that three levels of internal path all work properly
+    def test_multi_level_directory(self):
+        global test_dir
+        number_of_layers = 5
+        directory_name = "test"
+        file_name = "file"
+        compression_type = "tar"
+        internal_paths = [""]
+
+        # Set up internal_paths list....
+        # It will look like:
+        # ["test", "test/testtest", "test/testtest/testtesttest"]
+        # To describe the file structure:
+        # test_dir/
+        # └── test/
+        #     └── testtest/
+        #         └──testtesttest/
+        #            └──testtesttesttest/
+        for i in range(1, number_of_layers):
+            internal_path = (directory_name * i)
+            if i - 1 > 0:
+                internal_path = os.path.join(internal_paths[i - 1], internal_path)
+            internal_paths.insert(i, internal_path)
+
+        # We will pick internal_path each iteration and make sure
+        # only the files INSIDE the internal_path were unpacked.
+        # If the second level directory is the internal_path, the first level
+        # file SHOULD NOT be unpacked because it is out of scope.
+        for internal_path_level in range(1, number_of_layers):
+            destination = test_dir
+            compressed_file_path = os.path.join(test_dir, "bad_ext_dep_zip.tar")
+            os.makedirs(os.path.join(test_dir, internal_paths[-1]))
+
+            # create files in each folder
+            files = [""]
+            for file_list_counter in range(1, number_of_layers):
+                files.insert(file_list_counter,
+                             os.path.join(test_dir, internal_paths[file_list_counter], file_name * file_list_counter))
+                with open(files[file_list_counter], "w+") as ext_dep_file:
+                    ext_dep_file.write(bad_json_file)
+
+            # zip up the while things
+            with tarfile.open(compressed_file_path, "w:gz") as _tar:
+                for file in files[1:]:
+                    _tar.add(file, arcname=file.split(test_dir)[1])
+
+            shutil.rmtree(os.path.join(test_dir, directory_name))
+            self.assertFalse(os.path.isdir(os.path.join(test_dir, directory_name)))
+
+            # The internal path moves down the directory structure each iteration
+            internal_path = internal_paths[internal_path_level]
+
+            WebDependency.unpack(compressed_file_path, destination, internal_path, compression_type)
+
+            # the file should be unpacked if file_list_counter >= internal_path_level
+            for file_list_counter in range(1, number_of_layers):
+                if internal_path_level <= file_list_counter:
+                    self.assertTrue(os.path.isfile(files[file_list_counter]))
+                else:
+                    self.assertFalse(os.path.isfile(files[file_list_counter]))
+
+            clean_workspace()
+            prep_workspace()
+
     # Test that zipfile uses / internally and not os.sep.
     # This is not exactly a test of WebDependency, more an assertion of an assumption
     # the code is making concerning the functionality of zipfile.

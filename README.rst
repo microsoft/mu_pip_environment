@@ -19,6 +19,12 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.12-dev
+------
+
+Bug Fixes:
+- Fixing string parsing for internal_path in WebDependency
+
 0.3.11
 ------
 
