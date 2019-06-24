@@ -4,3 +4,4 @@ exclude *.txt
 exclude .flake8
 exclude .coveragerc
 exclude .gitignore
+include MuEnvironment/bin/NuGet.exe

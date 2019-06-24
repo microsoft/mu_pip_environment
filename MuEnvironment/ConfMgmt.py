@@ -30,12 +30,8 @@ import logging
 import shutil
 from MuEnvironment import ShellEnvironment
 import time
-from MuPythonLibrary.UtilityFunctions import RunCmd
+from MuPythonLibrary.Windows.VsWhereUtilities import FindWithVsWhere
 from MuEnvironment import VersionAggregator
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 class ConfMgmt():
@@ -193,29 +189,6 @@ class ConfMgmt():
             x = x + 1
         # end of while loop
 
-    #
-    # Use VsWhere tool to find visual studio tools
-    # return tuple of (error code, string value)
-    #
-    # Make static method so this can be used without
-    # full Edk2/Mu Build Environment
-    #
-    @staticmethod
-    def FindWithVsWhere(products=None):
-        cmd = "-latest -nologo -all -property installationPath"
-        if(products is not None):
-            cmd += " -products " + products
-        a = StringIO()
-        ret = RunCmd("VsWhere", cmd, outstream=a)
-        if(ret != 0):
-            a.close()
-            return (ret, None)
-        p1 = a.getvalue().strip()
-        a.close()
-        if(len(p1.strip()) > 0):
-            return (0, p1)
-        return (ret, None)
-
     def ToolsDefConfigure(self):
         Tag = self.env.GetValue("TOOL_CHAIN_TAG")
         VersionAggregator.GetVersionAggregator().ReportVersion("TOOL_CHAIN_TAG", Tag,
@@ -224,7 +197,7 @@ class ConfMgmt():
             p1 = None
             self.Logger.debug("Must find latest VS toolchain")
             for p in [None, "Microsoft.VisualStudio.Product.BuildTools", "*"]:
-                (rc, path) = ConfMgmt.FindWithVsWhere(p)
+                (rc, path) = FindWithVsWhere(p)
                 if rc == 0 and path is not None:
                     self.Logger.debug(
                         "Found VS instance using products = %s", p)

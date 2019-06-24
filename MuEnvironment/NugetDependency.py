@@ -30,12 +30,46 @@ import shutil
 from io import StringIO
 from MuEnvironment.ExternalDependency import ExternalDependency
 from MuPythonLibrary.UtilityFunctions import RunCmd
-from MuPythonLibrary.UtilityFunctions import GetNugetCmd
+from MuPythonLibrary.UtilityFunctions import GetHostInfo
+import pkg_resources
 
 
 class NugetDependency(ExternalDependency):
     TypeString = "nuget"
     global_cache_path = None
+
+    ####
+    # Add mono to front of command and resolve full path of exe for mono,
+    # Used to add nuget support on posix platforms.
+    # https://docs.microsoft.com/en-us/nuget/install-nuget-client-tools
+    #
+    # @return list containing either ["nuget.exe"] or ["mono", "/PATH/TO/nuget.exe"]
+    ####
+    @staticmethod
+    def GetNugetCmd():
+        file = "NuGet.exe"
+        cmd = []
+        if GetHostInfo().os == "Linux":
+            cmd += ["mono"]
+        # TODO Find the Nuget rom our bin file
+        requirement = pkg_resources.Requirement.parse("mu-environment")
+        nuget_file_path = os.path.join("MuEnvironment", "bin", file)
+        nuget_path = pkg_resources.resource_filename(requirement, nuget_file_path)
+
+        # check if we don't have it, look for nuget in the path
+        if not os.path.isfile(nuget_path):
+            for env_var in os.getenv("PATH").split(os.pathsep):
+                env_var = os.path.join(os.path.normpath(env_var), file)
+                if os.path.isfile(env_var):
+                    nuget_path = '"' + env_var + '"'
+                    break
+        # we've probably found something by now?
+        cmd += [nuget_path]
+        # if we're still hosed
+        if not os.path.isfile(nuget_path):
+            logging.error("We weren't able to find Nuget! Please reinstall your pip environment")
+            return None
+        return cmd
 
     @staticmethod
     def normalize_version(version):
@@ -62,7 +96,7 @@ class NugetDependency(ExternalDependency):
         # "global-packages" cache is on this machine.
         #
         if NugetDependency.global_cache_path is None:
-            cmd = GetNugetCmd()
+            cmd = NugetDependency.GetNugetCmd()
             cmd += ["locals", "global-packages", "-list"]
             return_buffer = StringIO()
             if (RunCmd(cmd[0], " ".join(cmd[1:]), outstream=return_buffer) == 0):
@@ -95,7 +129,6 @@ class NugetDependency(ExternalDependency):
 
     def fetch(self):
         package_name = self.name
-
         #
         # Before trying anything with Nuget feeds,
         # check to see whether the package is already in
@@ -118,7 +151,7 @@ class NugetDependency(ExternalDependency):
         # First, fetch the contents of the package.
         #
         temp_directory = self.get_temp_dir()
-        cmd = GetNugetCmd()
+        cmd = NugetDependency.GetNugetCmd()
         cmd += ["install", package_name]
         cmd += ["-Source", self.source]
         cmd += ["-ExcludeVersion"]

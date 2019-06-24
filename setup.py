@@ -26,9 +26,42 @@
 ##
 
 import setuptools
+from setuptools.command.sdist import sdist
+from setuptools.command.install import install
+from setuptools.command.develop import develop
+from MuEnvironment.bin.NuGet import DownloadNuget
 
 with open("README.rst", "r") as fh:
     long_description = fh.read()
+
+
+class PostSdistCommand(sdist):
+    """Post-sdist."""
+    def run(self):
+        # we need to download nuget so throw the exception if we don't get it
+        DownloadNuget()
+        sdist.run(self)
+
+
+class PostInstallCommand(install):
+    """Post-install."""
+    def run(self):
+        try:
+            DownloadNuget()
+        except:
+            pass
+        install.run(self)
+
+
+class PostDevCommand(develop):
+    """Post-develop."""
+    def run(self):
+        try:
+            DownloadNuget()
+        except:
+            pass
+        develop.run(self)
+
 
 setuptools.setup(
     name="mu_environment",
@@ -41,12 +74,17 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
+    cmdclass={
+        'sdist': PostSdistCommand,
+        'install': PostInstallCommand,
+        'develop': PostDevCommand,
+    },
     entry_points={
-        'console_scripts': ['omnicache=MuEnvironment.Omnicache:main']
+        'console_scripts': ['omnicache=MuEnvironment.Omnicache:main', 'nuget-publish=MuEnvironment.NugetPublishing:go']
     },
     install_requires=[
         'pyyaml',
-        'mu_python_library>=0.4.3'
+        'mu_python_library>=0.4.5'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

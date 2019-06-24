@@ -22,7 +22,13 @@ Version History
 0.3.12-dev
 ------
 
+Main Changes:
+
+- Embedded NuGet.exe into the egg and it can now be located via GetNugetCmd in MuEnvironment.bin.Nuget
+- Moved NugetPublishing over from Basecore
+
 Bug Fixes:
+
 - Fixing string parsing for internal_path in WebDependency
 
 0.3.11
