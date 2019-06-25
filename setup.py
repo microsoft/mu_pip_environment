@@ -79,12 +79,13 @@ setuptools.setup(
         'install': PostInstallCommand,
         'develop': PostDevCommand,
     },
+    include_package_data=True,
     entry_points={
         'console_scripts': ['omnicache=MuEnvironment.Omnicache:main', 'nuget-publish=MuEnvironment.NugetPublishing:go']
     },
     install_requires=[
         'pyyaml',
-        'mu_python_library>=0.4.5'
+        'mu_python_library>=0.4.6'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

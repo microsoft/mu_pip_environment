@@ -19,8 +19,17 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.13
+------
+
+Bug Fixes:
+
+- Fix broken download/publish of nuget.exe in 0.3.12 due to wheel usage. 
+
 0.3.12
 ------
+
+.. note:: This release is broken and has been deleted.
 
 Main Changes:
 
