@@ -264,9 +264,15 @@ class TestShellEnvironmenCheckpoints(unittest.TestCase):
         shell_env.append_path(test_path_change)
         self.assertIn(test_path_change, shell_env.active_path)
 
+        # Add a shell_var while we're at it.
+        self.assertEqual(shell_env.get_shell_var('i_should_not_exist'), None)
+        shell_env.set_shell_var('i_should_not_exist', 'a_value')
+        self.assertEqual(shell_env.get_shell_var('i_should_not_exist'), 'a_value')
+
         # Restore initial checkpoint and verify change is gone.
         shell_env.restore_initial_checkpoint()
         self.assertNotIn(test_path_change, shell_env.active_path, "restoring checkpoint should remove test change")
+        self.assertEqual(shell_env.get_shell_var('i_should_not_exist'), None)
 
     def test_checkpoint_indices_should_be_unique(self):
         shell_env = SE.ShellEnvironment()

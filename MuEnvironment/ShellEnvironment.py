@@ -128,7 +128,7 @@ class ShellEnvironment(metaclass=Singleton):
     def checkpoint(self):
         new_index = len(self.checkpoints)
         self.checkpoints.append({
-            'environ': self.active_environ,
+            'environ': copy.copy(self.active_environ),
             'path': self.active_path,
             'pypath': self.active_pypath,
             'buildvars': copy.copy(self.active_buildvars)
@@ -139,7 +139,7 @@ class ShellEnvironment(metaclass=Singleton):
     def restore_checkpoint(self, index):
         if index < len(self.checkpoints):
             chkpt = self.checkpoints[index]
-            self.active_environ = chkpt['environ']
+            self.active_environ = copy.copy(chkpt['environ'])
             self.active_path = chkpt['path']
             self.active_pypath = chkpt['pypath']
             self.active_buildvars = copy.copy(chkpt['buildvars'])
