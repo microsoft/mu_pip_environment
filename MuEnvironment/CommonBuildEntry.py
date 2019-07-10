@@ -309,7 +309,7 @@ def build_process(my_workspace_path, my_project_scope, my_module_pkg_paths, work
             my_workspace_path, my_project_scope)
         if not SelfDescribingEnvironment.VerifyEnvironment(my_workspace_path, my_project_scope):
             raise RuntimeError("Validation failed.")
-    except:
+    except Exception:
         raise RuntimeError(
             "Environment is not in a state to build! Please run '--UPDATE'.")
 

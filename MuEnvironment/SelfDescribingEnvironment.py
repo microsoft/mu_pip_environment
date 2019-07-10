@@ -238,7 +238,7 @@ class SelfDescribingEnvironment(object):
         for extdep in self._get_extdeps():
             if not extdep.verify():
                 result = False
-                logging.info("Dependency '%s' is not met!" % extdep.name)
+                logging.error("Dependency '%s' is not met!" % extdep.name)
 
         return result
 
