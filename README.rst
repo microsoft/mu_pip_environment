@@ -22,6 +22,10 @@ Version History
 0.3.14-dev
 ------
 
+Main Changes:
+
+- Added support to GitDependencies to allow server builds to supply different credentials if the extdep already allowed for it.
+
 Bug Fixes:
 
 - Fixed ShellEnvironment checkpointing of shell_vars. Vars created after a checkpoint were not being destroyed when restoring the checkpoint.

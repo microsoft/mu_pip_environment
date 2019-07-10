@@ -33,6 +33,8 @@ import stat
 import tempfile
 from MuEnvironment import EnvironmentDescriptorFiles as EDF
 from MuEnvironment.GitDependency import GitDependency
+from MuEnvironment import ShellEnvironment
+import copy
 
 test_dir = None
 uptodate_version = "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d"
@@ -254,6 +256,69 @@ class TestGitDependency(unittest.TestCase):
         self.assertTrue(ext_dep.verify(), "Confirm repo is valid and clean")
         ext_dep.clean()
         self.assertFalse(os.path.isdir(ext_dep.contents_dir))
+
+
+class TestGitDependencyUrlPatching(unittest.TestCase):
+    TEST_DESCRIPTOR = {
+        "descriptor_file": os.path.abspath(__file__),
+        "scope": "global",
+        "type": "git",
+        "name": "HelloWorld",
+        "source": "https://github.com/octocat/Hello-World.git",
+        "version": "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+        "flags": []
+    }
+
+    def tearDown(self):
+        env = ShellEnvironment.GetEnvironment()
+        env.restore_checkpoint(TestGitDependencyUrlPatching.env_checkpoint)
+
+    @classmethod
+    def setUpClass(cls):
+        env = ShellEnvironment.GetEnvironment()
+        cls.env_checkpoint = env.checkpoint()
+
+    #
+    # URL FORMATTING TESTS
+    #
+    def test_url_should_not_be_modified_without_env(self):
+        my_test_descriptor = copy.copy(TestGitDependencyUrlPatching.TEST_DESCRIPTOR)
+        # Add the indicator for patching.
+        my_test_descriptor['url_creds_var'] = 'test_creds_var'
+
+        # Initialize the GitDependency object.
+        gdep = GitDependency(my_test_descriptor)
+
+        # Assert that the URL is identical.
+        self.assertEqual(gdep.source, my_test_descriptor['source'])
+
+    def test_url_should_not_be_modified_without_descriptor_field(self):
+        my_test_descriptor = copy.copy(TestGitDependencyUrlPatching.TEST_DESCRIPTOR)
+
+        env = ShellEnvironment.GetEnvironment()
+        # Add the var to the environment.
+        env.set_shell_var('test_creds_var', 'my_stuff')
+
+        # Initialize the GitDependency object.
+        gdep = GitDependency(my_test_descriptor)
+
+        # Assert that the URL is identical.
+        self.assertEqual(gdep.source, my_test_descriptor['source'])
+
+    def test_url_should_be_modified_if_creds_are_indicated_and_supplied(self):
+        my_test_descriptor = copy.copy(TestGitDependencyUrlPatching.TEST_DESCRIPTOR)
+        # Add the indicator for patching.
+        my_test_descriptor['url_creds_var'] = 'test_creds_var'
+
+        env = ShellEnvironment.GetEnvironment()
+        # Add the var to the environment.
+        env.set_shell_var('test_creds_var', 'my_stuff')
+
+        # Initialize the GitDependency object.
+        gdep = GitDependency(my_test_descriptor)
+
+        # Assert that the URL is identical.
+        self.assertEqual(gdep.source, "https://my_stuff@github.com/octocat/Hello-World.git")
 
 
 if __name__ == '__main__':

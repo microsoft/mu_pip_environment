@@ -112,7 +112,7 @@ For this type there are zero additional ext_dep fields.
 
 For this type there are three additional ext_dep fields:
 
-- internal_path (required)
+1. internal_path (required)
     ```
     This describes the internal structure of whatever we are downloading.
 
@@ -138,7 +138,30 @@ For this type there are three additional ext_dep fields:
 - source: url of git repo
 - version: commit hash to checkout
 
-For this type there are zero additional ext_dep fields.
+#### Experimental Option: url_creds_var
+
+If this field is found in the descriptor file when initializing this extdep, the string value listed will be checked against the environment's shell_vars. If a matching var is found, this string in the shell_var will be prepended to the URL host for the source URL.
+
+NOTE: This is intended for server builds and may be subject to change as we figure out how it fits into build flows. Also note that any creds passed may end up in build logs and other server-side artifacts. Use with caution!
+
+Example:
+```py
+TEST_DESCRIPTOR = {
+        "scope": "global",
+        "type": "git",
+        "name": "ExampleRepo",
+        "source": "http://example.com/path/to/repo.git",
+        "version": "7fd1a60b01f91b314f59955a4e4d4e80d8edf11d",
+        "url_creds_var": 'my_url_creds'
+        "flags": []
+    }
+
+# Populate shell var.
+env.set_shell_var('my_url_creds', 'my_user:my_pass')
+
+# URL cloned by the GitDependency object will look like...
+final_url = 'http://my_user:my_pass@example.com/path/to/repo.git'
+```
 
 ## The Flags
 

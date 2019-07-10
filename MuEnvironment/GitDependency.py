@@ -32,6 +32,8 @@ from MuEnvironment.ExternalDependency import ExternalDependency
 from MuEnvironment import RepoResolver
 from MuEnvironment.MuGit import Repo
 from MuEnvironment import VersionAggregator
+from MuEnvironment import ShellEnvironment
+from urllib.parse import urlsplit, urlunsplit
 
 
 class GitDependency(ExternalDependency):
@@ -39,12 +41,31 @@ class GitDependency(ExternalDependency):
     ext_dep fields:
     - source:  url for git clone
     - version: commit from git repo
+    - url_creds_var: shell_var name for credential updating [optional]
     '''
 
     TypeString = "git"
 
     def __init__(self, descriptor):
         super().__init__(descriptor)
+
+        # Check to see whether this URL should be patched.
+        url_creds_var = descriptor.get('url_creds_var', None)
+        if url_creds_var is not None:
+            env = ShellEnvironment.GetEnvironment()
+            url_creds = env.get_shell_var(url_creds_var)
+            if url_creds is not None:
+                # Break things up.
+                source_parts = urlsplit(self.source)
+                # Modify the URL host with the creds.
+                new_parts = (source_parts.scheme,
+                             url_creds + '@' + source_parts.netloc,
+                             source_parts.path,
+                             source_parts.query,
+                             source_parts.fragment)
+                # Put things back together.
+                self.source = urlunsplit(new_parts)
+
         self.repo_url = self.source
         self.commit = self.version
         self._local_repo_root_path = os.path.join(os.path.abspath(self.contents_dir), self.name)
