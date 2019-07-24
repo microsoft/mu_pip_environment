@@ -4,7 +4,7 @@ Tool to help create and publish nuget packages for Project Mu resources
 
 ## Usage
 
-See NugetPublishing -h  
+See NugetPublishing -h
 
 ## OPTIONAL: host_specific folders
 
@@ -41,7 +41,13 @@ For example
   * VSTS credential manager.  In an interactive session a dialog will popup for the user to login
   * Tokens can also be used as the API key.  Go to your account page to generate a token that can push packages
 * NuGet.org
-  * Must use an API key.  Go to your account page and generate a key.  
+  * Must use an API key.  Go to your account page and generate a key.
+
+## Pushing to an Authenticated Stream
+
+Previously the VsCredentialProvider was packaged right next to Nuget.exe and it was automatically found.
+If you have a specific credential provider executable needed to push to your stream, you'll need to follow the instructions [here](https://docs.microsoft.com/en-us/nuget/reference/extensibility/nuget-exe-credential-providers) to make the executable available to find.
+You can add it to %LocalAppData%\NuGet\CredentialProvider or you can add an environmental variable NUGET_CREDENTIALPROVIDERS_PATH with the location of your provider. If you have multiple, they can be semicolon seperated.
 
 ## Example: Creating new config file for first use
 
