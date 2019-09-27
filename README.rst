@@ -19,6 +19,17 @@ Please see Project Mu for details https://microsoft.github.io/mu
 Version History
 ===============
 
+0.3.15
+------
+
+Main Changes:
+
+- None
+
+Bug Fixes:
+
+- Allow remotes to be renamed in Omnicache config files
+
 0.3.14
 ------
 
@@ -35,7 +46,7 @@ Bug Fixes:
 
 Bug Fixes:
 
-- Fix broken download/publish of nuget.exe in 0.3.12 due to wheel usage. 
+- Fix broken download/publish of nuget.exe in 0.3.12 due to wheel usage.
 
 0.3.12
 ------
