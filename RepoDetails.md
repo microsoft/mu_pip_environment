@@ -5,6 +5,9 @@
     Branch:         {{mu_pip_environment.branch}}
     Commit:         [{{mu_pip_environment.commit}}]({{mu_pip_environment.commitlink}})
     Commit Date:    {{mu_pip_environment.date}}
+    
+**THIS PROJECT IS NO LONGER ACTIVE** - ACTIVE WORK HAS MOVED TO https://github.com/tianocore/edk2-pytool-extensions
+---
 
 Entry point into Self Describing Environment (SDE). Sets up and parses state of workspace before calling into build.
 
